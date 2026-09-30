@@ -457,6 +457,36 @@ a.copy-button, a.action-button, a.secondary-button { text-decoration: none; disp
 .admin-nav a { color: var(--display-muted); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; text-decoration: none; }
 .admin-nav a[aria-current="page"], .admin-nav a:hover { background: rgba(255, 255, 255, .1); color: #fff; }
 .admin-topbar-actions form { margin: 0; }
+
+/* Painel: menu sanduíche no celular. No computador o .admin-menu "some" (display: contents) e tudo fica na barra. */
+.admin-menu { display: contents; }
+.admin-menu-button { display: none; }
+@media (max-width: 820px) {
+  .admin-topbar { flex-wrap: nowrap; justify-content: space-between; }
+  .admin-menu-button {
+    position: relative; display: grid; align-content: center; gap: 5px; width: 42px; height: 42px; padding: 0 10px;
+    border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.08); cursor: pointer;
+  }
+  .admin-menu-button span { display: block; height: 2px; border-radius: 2px; background: var(--display-ink); transition: transform 0.25s ease, opacity 0.2s ease; }
+  /* Aberto: as três linhas viram um X */
+  .admin-menu-button[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .admin-menu-button[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .admin-menu-button[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .admin-menu-dot { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--highlight); box-shadow: 0 0 0 2px var(--display); }
+  .admin-menu {
+    position: absolute; top: 100%; left: 0; right: 0; display: grid; gap: 4px; padding: 10px 16px 16px;
+    background: var(--display); border-top: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+    opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  }
+  .admin-topbar.is-menu-open .admin-menu { opacity: 1; visibility: visible; transform: none; }
+  .admin-menu .admin-nav { flex-direction: column; flex-wrap: nowrap; }
+  .admin-menu .admin-nav a { padding: 12px 14px; font-size: 16px; border-radius: 8px; }
+  .admin-menu .admin-topbar-actions { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); justify-content: space-between; }
+  .admin-menu .admin-link { font-size: 15px; padding: 6px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-menu, .admin-menu-button span { transition: none; }
+}
 .period-picker a { padding: 6px 12px; border-radius: 6px; font-weight: 600; color: var(--muted); font-size: 14px; text-decoration: none; }
 .period-picker a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
 .admin-flash { background: var(--error-bg, #fde8e8); color: var(--danger); border-radius: 8px; padding: 10px 14px; margin: 0; }

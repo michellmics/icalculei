@@ -5,8 +5,38 @@
   "use strict";
 
   // PWA do painel: service worker próprio (public/sw-painel.js), separado do site
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw-painel.js", { scope: "/painel" }).catch(() => {});
+  // (try: se o navegador recusar, o resto do painel, como o menu, continua funcionando)
+  try {
+    navigator.serviceWorker?.register("/sw-painel.js", { scope: "/painel" }).catch(() => {});
+  } catch {
+    // sem app instalável neste navegador
+  }
+
+  // Menu sanduíche do celular: abre e fecha o menu; fecha ao escolher um item, tocar fora ou apertar Esc
+  const menuButton = document.querySelector(".admin-menu-button");
+  const topbar = document.querySelector(".admin-topbar");
+  if (menuButton && topbar) {
+    const setMenuOpen = (isOpen) => {
+      topbar.classList.toggle("is-menu-open", isOpen);
+      menuButton.setAttribute("aria-expanded", String(isOpen));
+      menuButton.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
+    };
+    menuButton.addEventListener("click", () => setMenuOpen(!topbar.classList.contains("is-menu-open")));
+    document.getElementById("admin-menu").addEventListener("click", (clickEvent) => {
+      if (clickEvent.target.closest("a")) {
+        setMenuOpen(false);
+      }
+    });
+    document.addEventListener("click", (clickEvent) => {
+      if (!topbar.contains(clickEvent.target)) {
+        setMenuOpen(false);
+      }
+    });
+    document.addEventListener("keydown", (keyEvent) => {
+      if (keyEvent.key === "Escape") {
+        setMenuOpen(false);
+      }
+    });
   }
 
   // Formulários com data-confirm (ex.: Atualizar site) pedem confirmação antes de enviar

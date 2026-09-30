@@ -40,6 +40,12 @@ $tabs = [
   <div class="admin-shell">
     <header class="admin-topbar">
       <span class="admin-brand"><?= \App\Core\View::partial("logo-mark") ?> Vibe2000 <b>Painel</b></span>
+      <!-- Menu sanduíche: só aparece no celular (admin.js abre e fecha o #admin-menu) -->
+      <button type="button" class="admin-menu-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="admin-menu">
+        <span></span><span></span><span></span>
+        <?php if ($newMessages > 0): ?><i class="admin-menu-dot" aria-hidden="true"></i><?php endif; ?>
+      </button>
+      <div class="admin-menu" id="admin-menu">
       <nav class="admin-nav" aria-label="Painel">
         <?php foreach ($tabs as $tabKey => $tab): ?>
           <a href="<?= e($tab['href']) ?>" <?= $activeTab === $tabKey ? 'aria-current="page"' : '' ?>>
@@ -53,6 +59,7 @@ $tabs = [
           <?= csrf_field() ?>
           <button type="submit" class="admin-link">sair</button>
         </form>
+      </div>
       </div>
     </header>
     <main class="admin-main">
