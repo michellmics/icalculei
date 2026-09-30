@@ -53,3 +53,4 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 ## SEO
 - Títulos, descrição, canonical, robots e og:* no layout do site; dados estruturados JSON-LD em `app/Services/StructuredData.php` (WebSite, WebApplication, FAQPage, Article, BreadcrumbList).
 - `/sitemap.xml` (com lastmod) e `/robots.txt` são gerados sozinhos a partir do conteúdo. Busca por texto (`?busca=`) é noindex.
+- `public/ads.txt`: linha do AdSense (pub-1658139075721224). Precisa estar em public/ para abrir em /ads.txt.
