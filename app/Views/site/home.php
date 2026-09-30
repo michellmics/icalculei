@@ -53,7 +53,7 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         <?php if ($mainArticle !== null): ?>
           <section class="featured" aria-label="Destaques">
             <a class="featured-main" href="/noticias/<?= e($mainArticle['id']) ?>">
-              <img class="news-cover" src="<?= e(news_image($mainArticle)) ?>" alt="<?= e($mainArticle['image_alt']) ?>" width="960" height="640" fetchpriority="high">
+              <img class="news-cover" src="<?= e(news_image($mainArticle)) ?>" srcset="<?= e(news_image_srcset($mainArticle)) ?>" sizes="(max-width: 900px) 92vw, 520px" alt="<?= e($mainArticle['image_alt']) ?>" width="960" height="640" fetchpriority="high">
               <span class="featured-text">
                 <span class="news-meta"><?= e($mainArticle['category']) ?> · <?= e(format_date($mainArticle['date'])) ?></span>
                 <h2><?= e($mainArticle['title']) ?></h2>
@@ -120,7 +120,7 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
       <section class="side-box install-side-box" data-install-area hidden>
         <h3>Vibe2000 no celular</h3>
         <div class="install-side-row">
-          <img src="/icons/site-192.png" alt="" width="48" height="48">
+          <img src="/icons/site-192.png" alt="" width="48" height="48" loading="lazy">
           <p>Instale o app: abre num toque, em tela cheia, e as calculadoras funcionam até sem internet.</p>
         </div>
         <button type="button" class="action-button" data-install-app hidden>📲 Instalar o app</button>

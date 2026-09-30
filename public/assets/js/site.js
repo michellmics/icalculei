@@ -4,6 +4,34 @@
 (() => {
   "use strict";
 
+  /* ---------- Menu sanduíche (celular) ---------- */
+  // Abre e fecha as categorias; fecha ao escolher uma, tocar fora ou apertar Esc
+  const siteMenuButton = document.querySelector(".site-menu-button");
+  const siteHeader = document.querySelector(".site-header");
+  if (siteMenuButton && siteHeader) {
+    const setSiteMenuOpen = (isOpen) => {
+      siteHeader.classList.toggle("is-menu-open", isOpen);
+      siteMenuButton.setAttribute("aria-expanded", String(isOpen));
+      siteMenuButton.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
+    };
+    siteMenuButton.addEventListener("click", () => setSiteMenuOpen(!siteHeader.classList.contains("is-menu-open")));
+    document.getElementById("site-menu").addEventListener("click", (clickEvent) => {
+      if (clickEvent.target.closest("a")) {
+        setSiteMenuOpen(false);
+      }
+    });
+    document.addEventListener("click", (clickEvent) => {
+      if (!siteHeader.contains(clickEvent.target)) {
+        setSiteMenuOpen(false);
+      }
+    });
+    document.addEventListener("keydown", (keyEvent) => {
+      if (keyEvent.key === "Escape") {
+        setSiteMenuOpen(false);
+      }
+    });
+  }
+
   /* ---------- Aviso de cookies (LGPD) ---------- */
   // A escolha fica guardada neste navegador. Anúncios personalizados só com permissão.
   const COOKIE_STORAGE_KEY = "vibe2000-cookie-consent";

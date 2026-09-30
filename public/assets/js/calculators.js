@@ -791,7 +791,10 @@
 
         // Troca os valores de reserva pelas cotações do dia (buscadas pelo site.js)
         const sourceNotice = document.getElementById("currency-source");
-        const exchangePromise = window.Vibe2000?.getExchangeRates ? window.Vibe2000.getExchangeRates() : Promise.resolve(null);
+        // Nas páginas de calculadora este arquivo roda antes do site.js (que busca as cotações):
+        // espera a página terminar de carregar para chamar window.Vibe2000
+        const pageReady = document.readyState === "loading" ? new Promise((resolve) => document.addEventListener("DOMContentLoaded", resolve, { once: true })) : Promise.resolve();
+        const exchangePromise = pageReady.then(() => (window.Vibe2000?.getExchangeRates ? window.Vibe2000.getExchangeRates() : null));
         exchangePromise.then((exchange) => {
           if (!exchange) {
             sourceNotice.textContent = "Não foi possível buscar a cotação do dia. Os valores abaixo são aproximados: confira e ajuste em \"Cotações usadas\".";

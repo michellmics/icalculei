@@ -43,12 +43,13 @@ class Http
 
         $policy = [
             "default-src 'self'",
-            "script-src 'self' https://cdnjs.cloudflare.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
+            // static.cloudflareinsights.com: estatísticas do Cloudflare (Web Analytics), que ele injeta nas páginas
+            "script-src 'self' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data:" . ($adsEnabled ? ' https:' : ''),
             // APIs gratuitas de cotação de moedas (chamadas pelo navegador)
-            "connect-src 'self' https://economia.awesomeapi.com.br https://api.frankfurter.dev" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
+            "connect-src 'self' https://economia.awesomeapi.com.br https://api.frankfurter.dev https://cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
             'frame-src ' . ($adsEnabled ? $googleAdHosts : "'none'"),
             "object-src 'none'",
             "base-uri 'self'",

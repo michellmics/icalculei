@@ -85,6 +85,30 @@ function news_image(array $article, bool $preferWebp = true): string
     return asset('img/news/' . $article['image']);
 }
 
+/**
+ * srcset da foto de uma notícia: 480 px (celular e cartões) e 960 px (telas grandes).
+ * Vazio se a versão pequena ainda não foi gerada (php bin/news-webp.php).
+ */
+function news_image_srcset(array $article): string
+{
+    $smallName = preg_replace('/\.jpe?g$/i', '-480.webp', $article['image']);
+    if (!is_file(BASE_PATH . '/public/assets/img/news/' . $smallName)) {
+        return '';
+    }
+
+    return asset('img/news/' . $smallName) . ' 480w, ' . news_image($article) . ' 960w';
+}
+
+/**
+ * Foto pequena (480 px) para miniaturas; se não existir, a normal.
+ */
+function news_image_small(array $article): string
+{
+    $smallName = preg_replace('/\.jpe?g$/i', '-480.webp', $article['image']);
+
+    return is_file(BASE_PATH . '/public/assets/img/news/' . $smallName) ? asset('img/news/' . $smallName) : news_image($article);
+}
+
 function csrf_field(): string
 {
     return '<input type="hidden" name="_csrf_token" value="' . e(Csrf::token()) . '">';

@@ -23,7 +23,6 @@
   <meta name="apple-mobile-web-app-title" content="Painel V2K">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1c2b24">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500&family=Source+Sans+3:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
   <script src="<?= e(asset('js/admin.js')) ?>" defer></script>
 </head>

@@ -27,6 +27,14 @@ class SiteController
     private function render(string $viewName, array $data, string $pageKey, int $statusCode = 200): void
     {
         http_response_code($statusCode);
+        // Páginas públicas podem ficar 10 minutos no cache do Cloudflare (s-maxage), que responde muito
+        // mais rápido que a hospedagem. O navegador sempre confere de novo (max-age=0).
+        // Páginas com sessão (contato) não entram: o PHP já as marca como "não guardar".
+        if ($statusCode === 200 && session_status() !== PHP_SESSION_ACTIVE) {
+            header('Cache-Control: public, max-age=0, s-maxage=600');
+        }
+        // Tempo que o PHP levou para montar a página (aparece no DevTools → Network → Timing)
+        header(sprintf('Server-Timing: app;dur=%.1f', (microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000));
         $data += [
             'categories' => Content::categories(),
             'pageKey' => $pageKey,

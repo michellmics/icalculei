@@ -18,7 +18,8 @@ use App\Services\Ads;
 $weekdays = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 $months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 $todayLabel = $weekdays[(int) date('w')] . ', ' . date('j') . ' de ' . $months[(int) date('n') - 1] . ' de ' . date('Y');
-$usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculadora:');
+// Página inicial: calculators.js no fim (conta rápida). Nas calculadoras ele carrega logo depois da calculadora (ver site/tool.php)
+$usesCalculators = $pageKey === 'inicio';
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -50,9 +51,13 @@ $usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculado
   <meta name="apple-mobile-web-app-title" content="Vibe2000">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="google-adsense-account" content="ca-pub-1658139075721224">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <?php if ($pageKey === 'inicio'): ?>
+    <!-- A página inicial busca a cotação do dólar e do euro: já abre a conexão com a API -->
+    <link rel="preconnect" href="https://economia.awesomeapi.com.br" crossorigin>
+  <?php endif; ?>
+  <!-- Fontes do próprio site: as duas principais carregam primeiro (evita o texto "pular") -->
+  <link rel="preload" href="/assets/fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
   <?php if (Ads::isEnabled()): ?>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e(config('adsense_client')) ?>" crossorigin="anonymous"></script>
@@ -63,7 +68,7 @@ $usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculado
   <div class="utility-bar">
     <div class="utility-inner">
       <span id="today-label"><?= e($todayLabel) ?></span>
-      <span class="utility-links"><button type="button" class="install-pill" data-install-app hidden>📲 Instalar o app</button> Calculadoras · Conversores · Notícias · <a href="/contato?assunto=anuncie">Anuncie</a></span>
+      <span class="utility-links"><button type="button" class="install-pill" data-install-app hidden>📲 Instalar o app</button> <span class="utility-words">Calculadoras · Conversores · Notícias ·</span> <a href="/contato?assunto=anuncie">Anuncie</a></span>
     </div>
   </div>
 
@@ -74,12 +79,16 @@ $usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculado
         <span class="search-icon" aria-hidden="true">⌕</span>
         <input class="search-input" name="busca" type="search" value="<?= e($searchTerm) ?>" placeholder="Buscar..." aria-label="Buscar calculadora" maxlength="60">
       </form>
+      <!-- Menu sanduíche: só aparece no celular (site.js abre e fecha o #site-menu) -->
+      <button type="button" class="site-menu-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <div class="nav-bar">
+    <div class="nav-bar" id="site-menu">
       <nav class="header-nav" aria-label="Categorias">
         <a class="nav-chip nav-news" href="/noticias">📰 Notícias</a>
         <?php foreach ($categories as $categoryKey => $categoryName): ?>
-          <a class="nav-chip" href="/?categoria=<?= e($categoryKey) ?>" aria-pressed="<?= $activeCategory === $categoryKey ? 'true' : 'false' ?>"><?= e($categoryName) ?></a>
+          <a class="nav-chip" href="/?categoria=<?= e($categoryKey) ?>" <?= $activeCategory === $categoryKey ? 'aria-current="page"' : '' ?>><?= e($categoryName) ?></a>
         <?php endforeach; ?>
       </nav>
     </div>

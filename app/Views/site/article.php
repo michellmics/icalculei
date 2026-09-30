@@ -17,7 +17,7 @@ use App\Services\Ads;
       <p class="lead"><?= e($article['summary']) ?></p>
       <div class="article-byline">Redação Vibe2000 · <?= e(format_date($article['date'])) ?> · <?= e($article['category']) ?></div>
       <figure class="article-photo">
-        <img src="<?= e(news_image($article)) ?>" alt="<?= e($article['image_alt']) ?>" width="960" height="640" fetchpriority="high">
+        <img src="<?= e(news_image($article)) ?>" srcset="<?= e(news_image_srcset($article)) ?>" sizes="(max-width: 900px) 92vw, 780px" alt="<?= e($article['image_alt']) ?>" width="960" height="640" fetchpriority="high">
         <figcaption><?= e($article['image_credit']) ?></figcaption>
       </figure>
 
@@ -45,7 +45,7 @@ use App\Services\Ads;
         <h3>Leia também</h3>
         <ul class="link-list">
           <?php foreach ($moreNews as $otherArticle): ?>
-            <?= View::partial('link-item', ['href' => '/noticias/' . $otherArticle['id'], 'image' => news_image($otherArticle), 'title' => $otherArticle['title'], 'subtitle' => format_date($otherArticle['date'])]) ?>
+            <?= View::partial('link-item', ['href' => '/noticias/' . $otherArticle['id'], 'image' => news_image_small($otherArticle), 'title' => $otherArticle['title'], 'subtitle' => format_date($otherArticle['date'])]) ?>
           <?php endforeach; ?>
         </ul>
       </section>

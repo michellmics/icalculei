@@ -28,7 +28,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - `content/news.php`: novo item no começo da lista. `id` em minúsculas com hífens.
 - `body`: strings = parágrafos, `['heading' => ...]` = subtítulo, `['ad' => true]` = anúncio no meio.
 - `related_tools`: ids de `content/tools.php`. Não inventar números atuais (taxas, valores) sem fonte.
-- Depois de salvar a foto JPG, rode `php bin/news-webp.php` (gera o WebP que o site usa).
+- Depois de salvar a foto JPG, rode `php bin/news-webp.php` (gera os WebP de 960 px e 480 px que o site usa com srcset).
 - Imagem: SEMPRE foto real (nunca ícone/desenho), livre (domínio público/CC0, ex.: rawpixel, StockSnap via api.openverse.org), JPG 960 px em `public/assets/img/news/{id}.jpg`, com `image_alt` e `image_credit`.
 - Destaques/“mais lidas”/“em alta”: `content/showcase.php`.
 
@@ -54,3 +54,9 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Títulos, descrição, canonical, robots e og:* no layout do site; dados estruturados JSON-LD em `app/Services/StructuredData.php` (WebSite, WebApplication, FAQPage, Article, BreadcrumbList).
 - `/sitemap.xml` (com lastmod) e `/robots.txt` são gerados sozinhos a partir do conteúdo. Busca por texto (`?busca=`) é noindex.
 - `public/ads.txt`: linha do AdSense (pub-1658139075721224). Precisa estar em public/ para abrir em /ads.txt.
+
+## Desempenho (PageSpeed)
+- Fontes hospedadas no site (`public/assets/fonts`, @font-face no topo do site.css, preload no layout). Não voltar para o Google Fonts.
+- Nas páginas de calculadora, `calculators.js` carrega logo depois do `#calculator` (em `site/tool.php`, sem defer) para não haver CLS. Na página inicial carrega no fim, com defer.
+- Páginas públicas mandam `Cache-Control: s-maxage=600` para o cache do Cloudflare; estáticos com 1 ano (`public/.htaccess`).
+- Colunas em grid sempre com `grid-template-columns: minmax(0, 1fr)` para nada estourar a largura no celular.

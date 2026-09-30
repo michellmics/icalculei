@@ -44,3 +44,19 @@ AddType application/manifest+json .webmanifest
     ExpiresByType image/svg+xml "access plus 1 month"
 </IfModule>
 AddType image/webp .webp
+
+# Cache de 1 ano para arquivos estáticos: o endereço muda a cada versão (?v=data), então nunca fica desatualizado.
+# (Os service workers logo abaixo ficam sem cache, para as atualizações chegarem na hora.)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|webp|jpe?g|png|svg|woff2)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "^(sw|sw-painel)\.js$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+<IfModule mod_expires.c>
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+</IfModule>
+AddType font/woff2 .woff2

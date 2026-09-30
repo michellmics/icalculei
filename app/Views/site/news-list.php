@@ -14,9 +14,9 @@ use App\Services\Ads;
   <h1 class="tool-title">Notícias e artigos</h1>
   <p class="tool-lead">Explicações sobre dinheiro, trabalho, saúde e o dia a dia, sempre com a calculadora certa do lado.</p>
   <div class="popular">
-    <a class="pill-button" href="/noticias" aria-pressed="<?= $activeNewsCategory === null ? 'true' : 'false' ?>">Todas</a>
+    <a class="pill-button" href="/noticias" <?= $activeNewsCategory === null ? 'aria-current="page"' : '' ?>>Todas</a>
     <?php foreach ($newsCategories as $category): ?>
-      <a class="pill-button" href="/noticias?categoria=<?= e(rawurlencode($category)) ?>" aria-pressed="<?= $activeNewsCategory === $category ? 'true' : 'false' ?>"><?= e($category) ?></a>
+      <a class="pill-button" href="/noticias?categoria=<?= e(rawurlencode($category)) ?>" <?= $activeNewsCategory === $category ? 'aria-current="page"' : '' ?>><?= e($category) ?></a>
     <?php endforeach; ?>
   </div>
   <div class="two-columns">
