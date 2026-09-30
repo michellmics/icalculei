@@ -10,7 +10,6 @@ use App\Core\View;
 use App\Services\Ads;
 ?>
 <main class="page">
-  <?= Ads::slot('top_banner') ?>
   <nav class="breadcrumb" aria-label="Você está em"><a href="/">Início</a> › <span>Notícias</span></nav>
   <h1 class="tool-title">Notícias e artigos</h1>
   <p class="tool-lead">Explicações sobre dinheiro, trabalho, saúde e o dia a dia, sempre com a calculadora certa do lado.</p>
@@ -24,6 +23,6 @@ use App\Services\Ads;
     <div class="news-list">
       <?php foreach ($news as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
     </div>
-    <aside class="side-column"><?= Ads::slot('article_sidebar') ?></aside>
+    <aside class="side-column"></aside>
   </div>
 </main>

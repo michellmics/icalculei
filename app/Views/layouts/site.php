@@ -41,6 +41,7 @@ $usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculado
   <link rel="apple-touch-icon" href="/icons/site-apple-touch.png">
   <meta name="apple-mobile-web-app-title" content="Vibe2000">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="google-adsense-account" content="ca-pub-1658139075721224">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">

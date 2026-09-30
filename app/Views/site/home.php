@@ -22,8 +22,6 @@ use App\Services\Content;
 $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
 ?>
 <main class="page">
-  <?= Ads::slot('top_banner') ?>
-
   <div class="trending" aria-label="Em alta">
     <b>EM ALTA</b>
     <div class="trending-links">
@@ -83,8 +81,6 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
           <?php foreach (array_slice($news, 0, 3) as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
         </div>
 
-        <?= Ads::slot('home_between_sections') ?>
-
         <div class="section-head"><h2>Todas as calculadoras</h2><span>por categoria</span></div>
         <div class="directory">
           <?php foreach ($categories as $categoryKey => $categoryName): ?>
@@ -129,7 +125,6 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         </div>
         <button type="button" class="action-button" data-install-app hidden>📲 Instalar o app</button>
       </section>
-      <?= Ads::slot('home_sidebar') ?>
       <section class="side-box">
         <h3>Mais lidas</h3>
         <ol class="ranked-list">

@@ -12,7 +12,6 @@ use App\Core\View;
 use App\Services\Ads;
 ?>
 <main class="page">
-  <?= Ads::slot('top_banner') ?>
   <nav class="breadcrumb" aria-label="Você está em">
     <a href="/">Início</a> › <a href="/?categoria=<?= e($tool['category']) ?>"><?= e($categories[$tool['category']]) ?></a> › <span><?= e($tool['name']) ?></span>
   </nav>
@@ -30,18 +29,15 @@ use App\Services\Ads;
         <section class="calculator"><div class="coming-soon"><b>Em breve.</b> Esta calculadora ainda está em preparação.</div></section>
       <?php endif; ?>
 
-      <?= Ads::slot('tool_after_calculator') ?>
 
       <article class="explainer">
         <?= $tool['explainer'] /* HTML do content/tools.php, escrito por nós (não vem de usuário) */ ?>
       </article>
 
-      <?= Ads::slot('tool_bottom') ?>
       <p class="field-hint">Encontrou algum problema nesta calculadora? <a href="/contato?assunto=erro&amp;calculadora=<?= e($tool['id']) ?>">Avise a gente</a>.</p>
     </div>
 
     <aside class="side-column">
-      <?= Ads::slot('tool_sidebar') ?>
       <section class="side-box">
         <h3>Ferramentas parecidas</h3>
         <ul class="link-list">

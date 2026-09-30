@@ -10,7 +10,6 @@ use App\Core\View;
 use App\Services\Ads;
 ?>
 <main class="page">
-  <?= Ads::slot('top_banner') ?>
   <nav class="breadcrumb" aria-label="Você está em"><a href="/">Início</a> › <a href="/noticias">Notícias</a> › <span><?= e($article['category']) ?></span></nav>
   <div class="article-page">
     <article class="article-body">
@@ -27,8 +26,6 @@ use App\Services\Ads;
           <p><?= e($block) ?></p>
         <?php elseif (isset($block['heading'])): ?>
           <h2><?= e($block['heading']) ?></h2>
-        <?php elseif (!empty($block['ad'])): ?>
-          <?= Ads::slot('article_middle') ?>
         <?php endif; ?>
       <?php endforeach; ?>
 
@@ -44,7 +41,6 @@ use App\Services\Ads;
       <?php endif; ?>
     </article>
     <aside class="side-column">
-      <?= Ads::slot('article_sidebar') ?>
       <section class="side-box">
         <h3>Leia também</h3>
         <ul class="link-list">
