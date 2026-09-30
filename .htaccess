@@ -1,0 +1,7 @@
+# Proteção extra: se a pasta raiz do projeto for publicada por engano,
+# todas as requisições vão para a pasta public/. Assim .env, app/ e storage/
+# nunca ficam acessíveis pelo navegador.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

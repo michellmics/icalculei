@@ -1,0 +1,22 @@
+# Variáveis de ambiente (contém senhas)
+.env
+
+# Dependências do Composer
+/vendor/
+
+# Arquivos gerados pela aplicação
+/storage/uploads/*
+/storage/cache/*
+/storage/logs/*
+/storage/sessions/*
+!/storage/**/.gitkeep
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Registro e trava do "Atualizar site" do painel
+/storage/deploy.json
+/storage/deploy.lock

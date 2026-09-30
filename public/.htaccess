@@ -1,0 +1,33 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Em produção, descomente as duas linhas abaixo para forçar HTTPS
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Tudo que não for arquivo existente (CSS, JS, imagem) vai para o index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Bloqueia arquivos ocultos (que começam com ponto)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Cache dos arquivos estáticos (o endereço muda a cada versão: ?v=...)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
+
+# PWA: tipo certo para os manifestos e service workers sempre atualizados
+AddType application/manifest+json .webmanifest
+<IfModule mod_headers.c>
+    <FilesMatch "^(sw|sw-painel)\.js$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>

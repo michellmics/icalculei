@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Vibe2000 · Calculadoras e conversores",
+  "short_name": "Vibe2000",
+  "description": "Calculadoras trabalhistas, financeiras, de saúde, veículos e ferramentas para desenvolvedores. Grátis.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/?utm_source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f5f2",
+  "theme_color": "#0e6b4f",
+  "categories": ["finance", "utilities", "productivity"],
+  "icons": [
+    { "src": "/icons/site-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/site-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/site-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Salário líquido", "url": "/calculadoras/salario-liquido?utm_source=app", "icons": [{ "src": "/icons/site-192.png", "sizes": "192x192" }] },
+    { "name": "Rescisão trabalhista", "url": "/calculadoras/rescisao?utm_source=app", "icons": [{ "src": "/icons/site-192.png", "sizes": "192x192" }] },
+    { "name": "Porcentagem", "url": "/calculadoras/porcentagem?utm_source=app", "icons": [{ "src": "/icons/site-192.png", "sizes": "192x192" }] },
+    { "name": "Notícias", "url": "/noticias?utm_source=app", "icons": [{ "src": "/icons/site-192.png", "sizes": "192x192" }] }
+  ]
+}

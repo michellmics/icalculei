@@ -1,0 +1,18 @@
+{
+    "name": "codemaze/vibe2000",
+    "description": "Vibe2000 - portal de calculadoras, conversores e notícias",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo_mysql": "*",
+        "ext-mbstring": "*"
+    },
+    "scripts": {
+        "serve": "php -S localhost:8000 -t public public/index.php",
+        "migrate": "php bin/migrate.php"
+    },
+    "config": {
+        "process-timeout": 0
+    }
+}
