@@ -34,6 +34,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 
 ## .env
 - Procurado nesta ordem: um nível acima do projeto, dois níveis acima, raiz do projeto (`App\Core\Env::loadFromProject`). Em produção fica fora da pasta do site. O painel (Atualizar site) mostra qual foi lido.
+- Painel: `ADMIN_USER`/`ADMIN_PASSWORD` (login) e `ADMIN_REMEMBER_KEY` ("manter conectado" por 180 dias; trocar a chave desconecta todos os aparelhos).
 
 ## Estrutura
 - `public/index.php` rotas · `app/Controllers` (Site, Visit = contador, Admin = painel) · `app/Views`

@@ -31,6 +31,7 @@ function config(string $key): mixed
         'session_name' => Env::get('SESSION_NAME', 'vibe2000_session'),
         'admin_user' => Env::get('ADMIN_USER', ''),
         'admin_password' => Env::get('ADMIN_PASSWORD', ''),
+        'admin_remember_key' => Env::get('ADMIN_REMEMBER_KEY', ''),
         'adsense_client' => Env::get('ADSENSE_CLIENT', ''),
         'ads_placeholders' => Env::getBool('ADS_PLACEHOLDERS', false),
         'contact_email' => Env::get('CONTACT_EMAIL', ''),

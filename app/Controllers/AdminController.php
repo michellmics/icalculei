@@ -25,6 +25,8 @@ class AdminController
     private const MAX_LOGIN_ATTEMPTS = 5;
     private const LOGIN_LOCK_MINUTES = 15;
     private const MIN_PASSWORD_LENGTH = 10;
+    private const REMEMBER_COOKIE = 'v2k_remember';
+    private const REMEMBER_DAYS = 180;
 
     public function __construct()
     {
@@ -38,17 +40,61 @@ class AdminController
      */
     private function credentialsFingerprint(): string
     {
-        return hash_hmac('sha256', config('admin_user') . "\0" . config('admin_password'), config('app_key') ?: 'vibe2000');
+        // ADMIN_REMEMBER_KEY entra na conta: trocar a chave no .env desconecta todo mundo
+        return hash_hmac('sha256', config('admin_user') . "\0" . config('admin_password') . "\0" . config('admin_remember_key'), config('app_key') ?: 'vibe2000');
     }
 
     private function currentAdmin(): ?array
     {
-        $sessionFingerprint = Session::get('admin_fingerprint');
-        if (!is_string($sessionFingerprint) || config('admin_user') === '' || !hash_equals($this->credentialsFingerprint(), $sessionFingerprint)) {
+        if (config('admin_user') === '') {
             return null;
         }
+        $sessionFingerprint = Session::get('admin_fingerprint');
+        if (is_string($sessionFingerprint) && hash_equals($this->credentialsFingerprint(), $sessionFingerprint)) {
+            return ['user' => config('admin_user')];
+        }
 
-        return ['user' => config('admin_user')];
+        // "Manter conectado": o cookie assinado reabre a sessão sem pedir a senha de novo
+        if ($this->hasValidRememberCookie()) {
+            Session::regenerate();
+            Session::set('admin_fingerprint', $this->credentialsFingerprint());
+
+            return ['user' => config('admin_user')];
+        }
+
+        return null;
+    }
+
+    /* ---------- Manter conectado (180 dias) ----------
+       O cookie guarda só a data de validade e uma assinatura (HMAC) feita com o usuário, a senha e a
+       ADMIN_REMEMBER_KEY do .env. Não dá para falsificar sem saber esses valores, e trocar qualquer um
+       deles no .env invalida todos os cookies (todos os aparelhos saem). */
+    private function canRemember(): bool
+    {
+        return config('admin_remember_key') !== '';
+    }
+
+    private function rememberSignature(int $expiresAt): string
+    {
+        return hash_hmac('sha256', 'remember|' . $expiresAt, $this->credentialsFingerprint());
+    }
+
+    private function hasValidRememberCookie(): bool
+    {
+        $cookieValue = (string) ($_COOKIE[self::REMEMBER_COOKIE] ?? '');
+        if (!$this->canRemember() || !preg_match('/^(\d{10})\.([a-f0-9]{64})$/', $cookieValue, $parts)) {
+            return false;
+        }
+        $expiresAt = (int) $parts[1];
+
+        return $expiresAt > time() && hash_equals($this->rememberSignature($expiresAt), $parts[2]);
+    }
+
+    private function setRememberCookie(bool $remember): void
+    {
+        $expiresAt = $remember ? time() + self::REMEMBER_DAYS * 86400 : time() - 3600;
+        $cookieValue = $remember ? $expiresAt . '.' . $this->rememberSignature($expiresAt) : '';
+        setcookie(self::REMEMBER_COOKIE, $cookieValue, ['expires' => $expiresAt, 'path' => '/painel', 'httponly' => true, 'samesite' => 'Lax', 'secure' => Session::isHttps()]);
     }
 
     /**
@@ -78,7 +124,7 @@ class AdminController
         if ($this->currentAdmin() !== null) {
             Http::redirect('/painel/visitas');
         }
-        echo View::render('admin/login', ['error' => Session::pullFlash('login_error')], null);
+        echo View::render('admin/login', ['error' => Session::pullFlash('login_error'), 'canRemember' => $this->canRemember(), 'rememberDays' => self::REMEMBER_DAYS], null);
     }
 
     public function login(): void
@@ -116,6 +162,7 @@ class AdminController
         RateLimit::clear($limitKey);
         Session::regenerate();
         Session::set('admin_fingerprint', $this->credentialsFingerprint());
+        $this->setRememberCookie($this->canRemember() && ($_POST['remember'] ?? '') === '1');
 
         // Marca este navegador como do dono: as visitas dele não entram na contagem
         setcookie(VisitController::ADMIN_COOKIE, '1', ['expires' => time() + 365 * 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax', 'secure' => Session::isHttps()]);
@@ -128,6 +175,7 @@ class AdminController
         if (Csrf::isValid($_POST['_csrf_token'] ?? null)) {
             Session::forget('admin_fingerprint');
             Session::regenerate();
+            $this->setRememberCookie(false); // sair também esquece este aparelho
         }
         Http::redirect('/painel');
     }
