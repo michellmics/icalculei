@@ -53,7 +53,7 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         <?php if ($mainArticle !== null): ?>
           <section class="featured" aria-label="Destaques">
             <a class="featured-main" href="/noticias/<?= e($mainArticle['id']) ?>">
-              <img class="news-cover" src="<?= e(news_image($mainArticle)) ?>" alt="<?= e($mainArticle['image_alt']) ?>" width="960" height="640">
+              <img class="news-cover" src="<?= e(news_image($mainArticle)) ?>" alt="<?= e($mainArticle['image_alt']) ?>" width="960" height="640" fetchpriority="high">
               <span class="featured-text">
                 <span class="news-meta"><?= e($mainArticle['category']) ?> · <?= e(format_date($mainArticle['date'])) ?></span>
                 <h2><?= e($mainArticle['title']) ?></h2>

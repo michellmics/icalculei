@@ -14,7 +14,7 @@
   <title>Painel · Entrar</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <!-- PWA do painel: a tela de login também pode ser instalada -->
-  <link rel="manifest" href="/painel.webmanifest">
+  <link rel="manifest" href="/manifest-painel.webmanifest">
   <link rel="apple-touch-icon" href="/icons/painel-apple-touch.png">
   <meta name="apple-mobile-web-app-title" content="Painel V2K">
   <meta name="mobile-web-app-capable" content="yes">

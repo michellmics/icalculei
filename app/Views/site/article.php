@@ -17,7 +17,7 @@ use App\Services\Ads;
       <p class="lead"><?= e($article['summary']) ?></p>
       <div class="article-byline">Redação Vibe2000 · <?= e(format_date($article['date'])) ?> · <?= e($article['category']) ?></div>
       <figure class="article-photo">
-        <img src="<?= e(news_image($article)) ?>" alt="<?= e($article['image_alt']) ?>" width="960" height="640">
+        <img src="<?= e(news_image($article)) ?>" alt="<?= e($article['image_alt']) ?>" width="960" height="640" fetchpriority="high">
         <figcaption><?= e($article['image_credit']) ?></figcaption>
       </figure>
 

@@ -29,12 +29,20 @@ $usesCalculators = $pageKey === 'inicio' || str_starts_with($pageKey, 'calculado
   <title><?= e($pageTitle) ?></title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <meta name="description" content="<?= e($metaDescription) ?>">
+  <meta name="robots" content="<?= e($robotsMeta ?? 'index, follow') ?>">
   <link rel="canonical" href="<?= e(url($canonicalPath)) ?>">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="<?= e($ogType ?? 'website') ?>">
   <meta property="og:site_name" content="Vibe2000">
+  <meta property="og:locale" content="pt_BR">
   <meta property="og:title" content="<?= e($pageTitle) ?>">
   <meta property="og:description" content="<?= e($metaDescription) ?>">
   <meta property="og:url" content="<?= e(url($canonicalPath)) ?>">
+  <meta property="og:image" content="<?= e($ogImage ?? url('/icons/site-512.png')) ?>">
+  <meta name="twitter:card" content="summary_large_image">
+  <?php foreach ($structuredData ?? [] as $schema): ?>
+    <!-- Dados estruturados (Schema.org) para o Google: app/Services/StructuredData.php -->
+    <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+  <?php endforeach; ?>
   <meta name="theme-color" content="#0e6b4f">
   <!-- PWA do site (public/manifest.webmanifest + public/sw.js) -->
   <link rel="manifest" href="/manifest.webmanifest">

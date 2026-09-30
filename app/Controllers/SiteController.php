@@ -12,6 +12,7 @@ use App\Core\View;
 use App\Models\ContactMessage;
 use App\Models\RateLimit;
 use App\Services\Content;
+use App\Services\StructuredData;
 
 /**
  * Páginas públicas do site.
@@ -31,6 +32,10 @@ class SiteController
             'pageKey' => $pageKey,
             'metaDescription' => 'Calculadoras gratuitas de porcentagem, rescisão, férias, 13º, salário líquido, juros, IMC, datas e muito mais, com explicação passo a passo.',
             'canonicalPath' => '/',
+            'structuredData' => [],
+            'ogType' => 'website',
+            'ogImage' => url('/icons/site-512.png'),
+            'robotsMeta' => 'index, follow',
             'searchTerm' => '',
             'activeCategory' => null,
         ];
@@ -46,7 +51,11 @@ class SiteController
         $showcase = Content::showcase();
 
         $this->render('site/home', [
-            'pageTitle' => 'Vibe2000 · Calculadoras, conversores e notícias',
+            'pageTitle' => $activeCategory !== null && $searchTerm === ''
+                ? 'Calculadoras de ' . Content::categories()[$activeCategory] . ' Online e Grátis | Vibe2000'
+                : 'Calculadoras Online Grátis: Trabalhistas, Financeiras e Mais | Vibe2000',
+            'robotsMeta' => $searchTerm !== '' ? 'noindex, follow' : 'index, follow',
+            'structuredData' => $isSearching ? [] : StructuredData::home(),
             'searchTerm' => $searchTerm,
             'activeCategory' => $activeCategory,
             'isSearching' => $isSearching,
@@ -57,7 +66,7 @@ class SiteController
             'trendingTools' => Content::toolsByIds($showcase['trending_tools']),
             'trendingStrip' => $showcase['trending_strip'],
             'mostReadNews' => Content::newsByIds($showcase['most_read_news']),
-            'canonicalPath' => '/',
+            'canonicalPath' => $activeCategory !== null && $searchTerm === '' ? '/?categoria=' . $activeCategory : '/',
         ], 'inicio');
     }
 
@@ -75,8 +84,9 @@ class SiteController
         $relatedNews = array_values(array_filter(Content::news(), fn (array $article) => in_array($toolId, $article['related_tools'], true)));
 
         $this->render('site/tool', [
-            'pageTitle' => ($tool['name'] === 'IMC' ? 'Calculadora de IMC' : $tool['name']) . ' · Vibe2000',
+            'pageTitle' => ($tool['seo_title'] ?? $tool['name']) . ' | Vibe2000',
             'metaDescription' => $tool['lead'],
+            'structuredData' => StructuredData::tool($tool, Content::categories()[$tool['category']] ?? ''),
             'tool' => $tool,
             'relatedTools' => array_slice(array_values($sameCategory + $otherCategories), 0, 6),
             'relatedNews' => array_slice($relatedNews ?: Content::news(), 0, 3),
@@ -92,7 +102,7 @@ class SiteController
         $activeNewsCategory = in_array($requestedCategory, $newsCategories, true) ? $requestedCategory : null;
 
         $this->render('site/news-list', [
-            'pageTitle' => 'Notícias e artigos · Vibe2000',
+            'pageTitle' => 'Notícias sobre Dinheiro, Trabalho e Saúde | Vibe2000',
             'metaDescription' => 'Explicações sobre dinheiro, trabalho, saúde e o dia a dia, com a calculadora certa do lado.',
             'newsCategories' => $newsCategories,
             'activeNewsCategory' => $activeNewsCategory,
@@ -110,8 +120,11 @@ class SiteController
         }
 
         $this->render('site/article', [
-            'pageTitle' => $article['title'] . ' · Vibe2000',
+            'pageTitle' => $article['title'] . ' | Vibe2000',
             'metaDescription' => $article['summary'],
+            'ogType' => 'article',
+            'ogImage' => url(news_image($article, false)),
+            'structuredData' => StructuredData::article($article, url(news_image($article, false))),
             'article' => $article,
             'relatedTools' => Content::toolsByIds($article['related_tools']),
             'moreNews' => array_slice(array_values(array_filter(Content::news(), fn (array $otherArticle) => $otherArticle['id'] !== $articleId)), 0, 4),
@@ -121,24 +134,25 @@ class SiteController
 
     public function about(): void
     {
-        $this->render('pages/about', ['pageTitle' => 'Sobre o Vibe2000', 'canonicalPath' => '/sobre'], 'sobre');
+        $this->render('pages/about', ['pageTitle' => 'Sobre o Vibe2000 | Calculadoras Online Grátis', 'metaDescription' => 'Conheça o Vibe2000: calculadoras e conversores gratuitos, feitos para resolver contas do dia a dia com explicação clara.', 'canonicalPath' => '/sobre'], 'sobre');
     }
 
     public function terms(): void
     {
-        $this->render('pages/terms', ['pageTitle' => 'Termos de uso · Vibe2000', 'canonicalPath' => '/termos-de-uso'], 'termos');
+        $this->render('pages/terms', ['pageTitle' => 'Termos de Uso | Vibe2000', 'metaDescription' => 'Termos de uso do Vibe2000: regras de uso do site, limites de responsabilidade e natureza estimativa dos resultados.', 'canonicalPath' => '/termos-de-uso'], 'termos');
     }
 
     public function privacy(): void
     {
-        $this->render('pages/privacy', ['pageTitle' => 'Política de privacidade · Vibe2000', 'canonicalPath' => '/privacidade'], 'privacidade');
+        $this->render('pages/privacy', ['pageTitle' => 'Política de Privacidade | Vibe2000', 'metaDescription' => 'Como o Vibe2000 trata dados pessoais, cookies e anúncios, de acordo com a LGPD.', 'canonicalPath' => '/privacidade'], 'privacidade');
     }
 
     public function contact(): void
     {
         Session::start();
         $this->render('pages/contact', [
-            'pageTitle' => 'Contato · Vibe2000',
+            'pageTitle' => 'Contato | Vibe2000',
+            'metaDescription' => 'Fale com o Vibe2000: sugestões, erros em calculadoras, anúncios e pedidos sobre dados pessoais.',
             'canonicalPath' => '/contato',
             'subjects' => ContactMessage::SUBJECTS,
             'tools' => Content::tools(),
@@ -228,16 +242,29 @@ class SiteController
     public function sitemap(): void
     {
         header('Content-Type: application/xml; charset=utf-8');
-        $paths = ['/', '/noticias', '/sobre', '/contato', '/termos-de-uso', '/privacidade'];
-        foreach (Content::tools() as $tool) {
-            $paths[] = '/calculadoras/' . $tool['id'];
+        // Mapa do site para o Google Search Console: endereço + data da última mudança (lastmod)
+        $news = Content::news();
+        $readyTools = array_filter(Content::tools(), fn (array $tool) => $tool['ready']);
+        $latestReview = max(array_merge(array_column($readyTools, 'reviewed'), array_column($news, 'date')));
+        $latestNews = $news[0]['date'] ?? $latestReview;
+
+        $pages = [['/', $latestReview], ['/noticias', $latestNews]];
+        foreach (array_keys(Content::categories()) as $categoryKey) {
+            $pages[] = ['/?categoria=' . $categoryKey, $latestReview];
         }
-        foreach (Content::news() as $article) {
-            $paths[] = '/noticias/' . $article['id'];
+        foreach ($readyTools as $tool) {
+            $pages[] = ['/calculadoras/' . $tool['id'], $tool['reviewed']];
         }
+        foreach ($news as $article) {
+            $pages[] = ['/noticias/' . $article['id'], $article['date']];
+        }
+        foreach (['/sobre', '/contato', '/termos-de-uso', '/privacidade'] as $institutionalPath) {
+            $pages[] = [$institutionalPath, null];
+        }
+
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        foreach ($paths as $path) {
-            echo '  <url><loc>' . e(url($path)) . '</loc></url>' . "\n";
+        foreach ($pages as [$path, $lastModified]) {
+            echo '  <url><loc>' . e(url($path)) . '</loc>' . ($lastModified ? '<lastmod>' . e($lastModified) . '</lastmod>' : '') . '</url>' . "\n";
         }
         echo '</urlset>' . "\n";
     }
@@ -250,6 +277,6 @@ class SiteController
 
     public function notFound(): void
     {
-        $this->render('site/not-found', ['pageTitle' => 'Página não encontrada · Vibe2000', 'tools' => Content::toolsByIds(Content::showcase()['popular_tools'])], 'inicio', 404);
+        $this->render('site/not-found', ['pageTitle' => 'Página não encontrada | Vibe2000', 'robotsMeta' => 'noindex, follow', 'tools' => Content::toolsByIds(Content::showcase()['popular_tools'])], 'inicio', 404);
     }
 }

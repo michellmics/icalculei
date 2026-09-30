@@ -71,9 +71,16 @@ function asset(string $path): string
 
 /**
  * Endereço da foto de uma notícia (public/assets/img/news/).
+ * No site usa a versão WebP, mais leve (criada por bin/news-webp.php), quando ela existe.
+ * Para redes sociais e dados do Google ($preferWebp = false), usa o JPG original.
  */
-function news_image(array $article): string
+function news_image(array $article, bool $preferWebp = true): string
 {
+    $webpName = preg_replace('/\.jpe?g$/i', '.webp', $article['image']);
+    if ($preferWebp && is_file(BASE_PATH . '/public/assets/img/news/' . $webpName)) {
+        return asset('img/news/' . $webpName);
+    }
+
     return asset('img/news/' . $article['image']);
 }
 
