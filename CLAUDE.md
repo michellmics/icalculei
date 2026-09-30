@@ -30,6 +30,9 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Imagem: SEMPRE foto real (nunca ícone/desenho), livre (domínio público/CC0, ex.: rawpixel, StockSnap via api.openverse.org), JPG 960 px em `public/assets/img/news/{id}.jpg`, com `image_alt` e `image_credit`.
 - Destaques/“mais lidas”/“em alta”: `content/showcase.php`.
 
+## .env
+- Procurado nesta ordem: um nível acima do projeto, dois níveis acima, raiz do projeto (`App\Core\Env::loadFromProject`). Em produção fica fora da pasta do site. O painel (Atualizar site) mostra qual foi lido.
+
 ## Estrutura
 - `public/index.php` rotas · `app/Controllers` (Site, Visit = contador, Admin = painel) · `app/Views`
 - `app/Services/VisitStats.php` números do painel (modelo do painel do projeto direitaconservada)

@@ -57,5 +57,6 @@ $pendingMigrations = array_keys(array_filter($migrations, fn (bool $alreadyRan) 
 
   <p class="muted deploy-note">Baixa o código da branch <b><?= e($settings['branch']) ?></b>, troca os arquivos, apaga os que saíram do repositório e roda as migrations pendentes.
     Nunca mexe no <code>.env</code> nem na pasta <code>storage/</code> (sessões e logs). O passo a passo fica registrado em <code>storage/logs</code>.</p>
+  <p class="muted deploy-note">Configuração (.env) lida de: <code><?= e(\App\Core\Env::loadedFile() ?? 'nenhum .env encontrado') ?></code></p>
   <p class="muted deploy-note">Migrations: <?= $pendingMigrations === [] ? 'nenhuma pendente' : e(count($pendingMigrations) . ' pendente(s): ' . implode(', ', $pendingMigrations)) ?>.</p>
 </section>

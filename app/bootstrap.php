@@ -24,7 +24,8 @@ spl_autoload_register(function (string $className): void {
 
 require BASE_PATH . '/app/helpers.php';
 
-App\Core\Env::load(BASE_PATH . '/.env');
+// .env: um ou dois níveis acima do projeto (produção, fora do alcance do navegador) ou na raiz (desenvolvimento)
+App\Core\Env::loadFromProject(BASE_PATH);
 
 date_default_timezone_set(config('timezone'));
 mb_internal_encoding('UTF-8');
