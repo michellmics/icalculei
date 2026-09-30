@@ -77,8 +77,8 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         </div>
 
         <div class="section-head"><h2>Últimas notícias</h2><a class="pill-button" href="/noticias">ver todas</a></div>
-        <div class="news-grid">
-          <?php foreach (array_slice($news, 0, 3) as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
+        <div class="news-grid news-grid-home">
+          <?php foreach (array_slice($news, 0, 4) as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
         </div>
 
         <div class="section-head"><h2>Todas as calculadoras</h2><span>por categoria</span></div>
