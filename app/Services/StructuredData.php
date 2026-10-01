@@ -23,7 +23,7 @@ class StructuredData
     {
         return [
             '@type' => 'Organization',
-            'name' => 'Vibe2000',
+            'name' => 'iCalculei',
             'url' => url('/'),
             'logo' => url('/icons/site-512.png'),
         ];
@@ -51,7 +51,7 @@ class StructuredData
             [
                 '@context' => 'https://schema.org',
                 '@type' => 'WebSite',
-                'name' => 'Vibe2000',
+                'name' => 'iCalculei',
                 'url' => url('/'),
                 'inLanguage' => 'pt-BR',
                 'potentialAction' => [
@@ -148,7 +148,7 @@ class StructuredData
                 'datePublished' => $article['date'],
                 'dateModified' => $article['date'],
                 'inLanguage' => 'pt-BR',
-                'author' => ['@type' => 'Organization', 'name' => 'Redação Vibe2000', 'url' => url('/sobre')],
+                'author' => ['@type' => 'Organization', 'name' => 'Redação iCalculei', 'url' => url('/sobre')],
                 'publisher' => self::organization(),
                 'mainEntityOfPage' => url('/noticias/' . $article['id']),
             ],

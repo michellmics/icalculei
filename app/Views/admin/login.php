@@ -20,7 +20,7 @@
   <!-- PWA do painel: a tela de login também pode ser instalada -->
   <link rel="manifest" href="/manifest-painel.webmanifest">
   <link rel="apple-touch-icon" href="/icons/painel-apple-touch.png">
-  <meta name="apple-mobile-web-app-title" content="Painel V2K">
+  <meta name="apple-mobile-web-app-title" content="Painel iCalculei">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1c2b24">
   <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
@@ -31,7 +31,7 @@
   <main class="admin-login">
     <form class="admin-login-card" method="post" action="/painel">
       <?= csrf_field() ?>
-      <div class="logo admin-logo"><?= \App\Core\View::partial("logo-mark") ?>Vibe2000 <small>painel</small></div>
+      <div class="logo admin-logo"><?= \App\Core\View::partial("logo-mark") ?>iCalculei <small>painel</small></div>
       <?php if ($error): ?>
         <p class="form-error" role="alert"><?= e($error) ?></p>
       <?php endif; ?>

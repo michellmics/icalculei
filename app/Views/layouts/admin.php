@@ -26,7 +26,7 @@ $tabs = [
   <!-- PWA do painel (public/manifest-painel.webmanifest + public/sw-painel.js) -->
   <link rel="manifest" href="/manifest-painel.webmanifest">
   <link rel="apple-touch-icon" href="/icons/painel-apple-touch.png">
-  <meta name="apple-mobile-web-app-title" content="Painel V2K">
+  <meta name="apple-mobile-web-app-title" content="Painel iCalculei">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1c2b24">
   <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
@@ -37,7 +37,7 @@ $tabs = [
 <body>
   <div class="admin-shell">
     <header class="admin-topbar">
-      <span class="admin-brand"><?= \App\Core\View::partial("logo-mark") ?> Vibe2000 <b>Painel</b></span>
+      <span class="admin-brand"><?= \App\Core\View::partial("logo-mark") ?> iCalculei <b>Painel</b></span>
       <!-- Menu sanduíche: só aparece no celular (admin.js abre e fecha o #admin-menu) -->
       <button type="button" class="admin-menu-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="admin-menu">
         <span></span><span></span><span></span>

@@ -19,13 +19,13 @@ use Throwable;
  *   POST { t: 'ping', p }                   → "ainda estou aqui" (a cada 30 s com a aba visível)
  *   POST { t: 'sai' }                       → saiu da página (sendBeacon)
  *   POST { t: 'uso',  tool: 'ferias' }      → primeiro cálculo feito numa calculadora
- * O visitante é um cookie anônimo (v2k_vid); no banco vai só o hash dele.
+ * O visitante é um cookie anônimo (icalc_vid); no banco vai só o hash dele.
  * Robôs e o navegador com o painel aberto não contam.
  */
 class VisitController
 {
-    private const VISITOR_COOKIE = 'v2k_vid';
-    public const ADMIN_COOKIE = 'v2k_admin';
+    private const VISITOR_COOKIE = 'icalc_vid';
+    public const ADMIN_COOKIE = 'icalc_admin';
     private const BOT_PATTERN = '/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|headless|lighthouse|curl|wget|python|monitor/i';
 
     public function track(): void

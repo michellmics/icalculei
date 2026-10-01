@@ -1,4 +1,4 @@
-// Vibe2000 - recursos do app instalado (PWA), no site e no painel. Mesmo modelo do projeto direitaconservada.
+// iCalculei - recursos do app instalado (PWA), no site e no painel. Mesmo modelo do projeto direitaconservada.
 //
 // 1. Puxar para atualizar: aberto como app, o Chrome e o Safari desligam o gesto nativo; no navegador comum
 //    ele já existe, então aqui só age em modo app. No topo da página, puxar para baixo mostra a bolinha ↻;

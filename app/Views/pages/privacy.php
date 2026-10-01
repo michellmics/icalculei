@@ -11,7 +11,7 @@
     <?php if (config("owner_name") === "" || config("contact_email") === ""): ?><p class="notice">Os trechos em amarelo devem ser preenchidos no arquivo .env (SITE_OWNER_NAME, SITE_OWNER_DOCUMENT, CONTACT_EMAIL, SITE_OWNER_CITY). Recomenda-se a revisão deste texto por um advogado antes da publicação.</p><?php endif; ?>
 
     <h2>1. Quem somos</h2>
-    <p>Esta Política explica como o Vibe2000 (o "Site") trata dados pessoais, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018, "LGPD"). O controlador dos dados é <?= owner_info("owner_name", "nome completo ou razão social") ?>, inscrito no <?= owner_info("owner_document", "CPF ou CNPJ") ?>, que pode ser contatado pelo e-mail <?= owner_info("contact_email", "e-mail de contato") ?>, também canal do encarregado de dados.</p>
+    <p>Esta Política explica como o iCalculei (o "Site") trata dados pessoais, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018, "LGPD"). O controlador dos dados é <?= owner_info("owner_name", "nome completo ou razão social") ?>, inscrito no <?= owner_info("owner_document", "CPF ou CNPJ") ?>, que pode ser contatado pelo e-mail <?= owner_info("contact_email", "e-mail de contato") ?>, também canal do encarregado de dados.</p>
 
     <h2>2. Dados digitados nas calculadoras</h2>
     <p>Os valores que você digita nas calculadoras e conversores (como salário, datas, peso ou altura) são processados <b>no seu próprio navegador</b>, apenas para exibir o resultado. Esses valores <b>não são enviados, armazenados nem compartilhados</b> pelo Site. As senhas criadas no gerador de senhas também são geradas no seu dispositivo e nunca saem dele.</p>

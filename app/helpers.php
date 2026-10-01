@@ -17,7 +17,7 @@ function config(string $key): mixed
     static $settings = null;
 
     $settings ??= [
-        'site_name' => Env::get('APP_NAME', 'Vibe2000'),
+        'site_name' => Env::get('APP_NAME', 'iCalculei'),
         'env' => Env::get('APP_ENV', 'production'),
         'debug' => Env::getBool('APP_DEBUG', false),
         'url' => rtrim(Env::get('APP_URL', 'http://localhost:8000'), '/'),
@@ -28,7 +28,7 @@ function config(string $key): mixed
         'db_name' => Env::get('DB_DATABASE', ''),
         'db_user' => Env::get('DB_USERNAME', ''),
         'db_password' => Env::get('DB_PASSWORD', ''),
-        'session_name' => Env::get('SESSION_NAME', 'vibe2000_session'),
+        'session_name' => Env::get('SESSION_NAME', 'icalculei_session'),
         'admin_user' => Env::get('ADMIN_USER', ''),
         'admin_password' => Env::get('ADMIN_PASSWORD', ''),
         'admin_remember_key' => Env::get('ADMIN_REMEMBER_KEY', ''),
@@ -156,11 +156,11 @@ function format_date(string $isoDate): string
  * Banner de compartilhamento (og:image 1200×630, gerado por bin/og-images.php). Sem o arquivo, usa o banner geral.
  * O ?v= muda quando o banner é gerado de novo (WhatsApp e Facebook guardam a imagem pelo endereço).
  */
-function share_banner(string $name = 'vibe2000'): string
+function share_banner(string $name = 'icalculei'): string
 {
     $path = '/assets/img/og/' . $name . '.png';
     if (!is_file(BASE_PATH . '/public' . $path)) {
-        $path = '/assets/img/og/vibe2000.png';
+        $path = '/assets/img/og/icalculei.png';
     }
 
     return url($path) . '?v=' . (int) @filemtime(BASE_PATH . '/public' . $path);

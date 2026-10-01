@@ -85,8 +85,8 @@ class HolidayController
         echo View::render('site/holidays', [
             'ogImage' => share_banner('feriados'),
             'pageTitle' => $state
-                ? "Feriados {$yearNumber} {$state['in']} {$place}: Estaduais e da Capital | Vibe2000"
-                : "Feriados {$yearNumber}: Calendário Completo dos Feriados Nacionais | Vibe2000",
+                ? "Feriados {$yearNumber} {$state['in']} {$place}: Estaduais e da Capital | iCalculei"
+                : "Feriados {$yearNumber}: Calendário Completo dos Feriados Nacionais | iCalculei",
             'metaDescription' => $state
                 ? "Todos os feriados de {$yearNumber} {$state['in']} {$state['name']}: nacionais, estaduais e da capital {$state['capital']}, com dia da semana, feriadões e calendário para baixar."
                 : "Todos os feriados nacionais e pontos facultativos de {$yearNumber}, com dia da semana, feriadões, dias úteis de cada mês e calendário para baixar.",
@@ -150,7 +150,7 @@ class HolidayController
         header('Cache-Control: public, max-age=0, s-maxage=600');
         echo View::render('site/holidays-month', [
             'ogImage' => share_banner('feriados'),
-            'pageTitle' => "Feriados de {$monthTitle} de {$yearNumber}: Datas, Feriadões e Dias Úteis | Vibe2000",
+            'pageTitle' => "Feriados de {$monthTitle} de {$yearNumber}: Datas, Feriadões e Dias Úteis | iCalculei",
             'metaDescription' => $questions[0][1] . ' ' . $questions[2][1],
             'canonicalPath' => $path,
             'structuredData' => StructuredData::holidayMonth($yearNumber, $monthName, $path, $questions),
@@ -181,13 +181,13 @@ class HolidayController
             return;
         }
         $escape = fn (string $text) => str_replace(['\\', ';', ',', "\n"], ['\\\\', '\\;', '\\,', '\\n'], $text);
-        $lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Vibe2000//Feriados//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-            'X-WR-CALNAME:' . $escape("Feriados {$yearNumber}" . ($stateCode ? ' - ' . strtoupper($stateCode) : '') . ' (Vibe2000)')];
+        $lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//iCalculei//Feriados//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+            'X-WR-CALNAME:' . $escape("Feriados {$yearNumber}" . ($stateCode ? ' - ' . strtoupper($stateCode) : '') . ' (iCalculei)')];
         foreach (Holidays::forYear($yearNumber, $stateCode) as $holiday) {
             $start = str_replace('-', '', $holiday['date']);
             $end = (new \DateTimeImmutable($holiday['date']))->modify('+1 day')->format('Ymd');
             $title = implode(' / ', $holiday['names']) . ($holiday['type'] === 'facultativo' ? ' (ponto facultativo)' : '');
-            array_push($lines, 'BEGIN:VEVENT', 'UID:' . $start . '-' . md5($title) . '@vibe2000.com.br', 'DTSTAMP:' . gmdate('Ymd\THis\Z'),
+            array_push($lines, 'BEGIN:VEVENT', 'UID:' . $start . '-' . md5($title) . '@icalculei.com.br', 'DTSTAMP:' . gmdate('Ymd\THis\Z'),
                 'DTSTART;VALUE=DATE:' . $start, 'DTEND;VALUE=DATE:' . $end, 'SUMMARY:' . $escape($title), 'TRANSP:TRANSPARENT', 'END:VEVENT');
         }
         $lines[] = 'END:VCALENDAR';

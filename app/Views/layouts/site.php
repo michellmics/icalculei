@@ -34,7 +34,7 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <meta name="robots" content="<?= e($robotsMeta ?? 'index, follow, max-image-preview:large') ?>">
   <link rel="canonical" href="<?= e(url($canonicalPath)) ?>">
   <meta property="og:type" content="<?= e($ogType ?? 'website') ?>">
-  <meta property="og:site_name" content="Vibe2000">
+  <meta property="og:site_name" content="iCalculei">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:title" content="<?= e($pageTitle) ?>">
   <meta property="og:description" content="<?= e($metaDescription) ?>">
@@ -59,7 +59,7 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <!-- PWA do site (public/manifest.webmanifest + public/sw.js) -->
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/site-apple-touch.png">
-  <meta name="apple-mobile-web-app-title" content="Vibe2000">
+  <meta name="apple-mobile-web-app-title" content="iCalculei">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="google-adsense-account" content="ca-pub-1658139075721224">
   <?php if ($pageKey === 'inicio'): ?>
@@ -85,7 +85,7 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
 
   <header class="site-header">
     <div class="header-inner">
-      <a class="logo" href="/"><?= \App\Core\View::partial("logo-mark") ?>Vibe2000</a>
+      <a class="logo" href="/"><?= \App\Core\View::partial("logo-mark") ?>iCalculei</a>
       <form class="header-search" action="/" method="get" role="search">
         <span class="search-icon" aria-hidden="true">⌕</span>
         <input class="search-input" name="busca" type="search" value="<?= e($searchTerm) ?>" placeholder="Buscar..." aria-label="Buscar calculadora" maxlength="60">
@@ -110,16 +110,16 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
 
   <footer class="site-footer">
     <div class="install-footer" data-install-area hidden>
-      <button type="button" class="install-footer-button" data-install-app hidden>📲 Instalar o app do Vibe2000</button>
+      <button type="button" class="install-footer-button" data-install-app hidden>📲 Instalar o app do iCalculei</button>
     </div>
     <div class="footer-disclaimer">
       <h2>Aviso importante</h2>
-      <p>O Vibe2000 é um site <b>gratuito</b>, de caráter <b>informativo e educativo</b>. As calculadoras e conversores apresentam <b>estimativas</b> baseadas nas informações digitadas por você e nas regras e tabelas oficiais conhecidas na data de revisão indicada em cada ferramenta. Apesar do cuidado na elaboração, <b>podem ocorrer erros de cálculo, desatualizações ou diferenças</b> em relação ao seu caso específico (convenções coletivas, acordos, benefícios, particularidades da empresa ou da legislação local, entre outros).</p>
+      <p>O iCalculei é um site <b>gratuito</b>, de caráter <b>informativo e educativo</b>. As calculadoras e conversores apresentam <b>estimativas</b> baseadas nas informações digitadas por você e nas regras e tabelas oficiais conhecidas na data de revisão indicada em cada ferramenta. Apesar do cuidado na elaboração, <b>podem ocorrer erros de cálculo, desatualizações ou diferenças</b> em relação ao seu caso específico (convenções coletivas, acordos, benefícios, particularidades da empresa ou da legislação local, entre outros).</p>
       <p>Os resultados <b>não substituem</b> a orientação de profissionais habilitados, como contador, advogado, consultor financeiro, médico ou nutricionista, nem os documentos e cálculos oficiais do empregador, de bancos ou de órgãos públicos. Confira sempre os valores antes de tomar qualquer decisão. As notícias e artigos têm finalidade informativa e não representam posição oficial de nenhum órgão.</p>
-      <p>Ao utilizar o site, você concorda que o uso das informações é de sua inteira responsabilidade e que o Vibe2000 e seus responsáveis <b>não se responsabilizam por decisões tomadas, prejuízos ou danos</b> de qualquer natureza decorrentes do uso dos resultados apresentados. Leia os <a href="/termos-de-uso">Termos de uso</a> e a <a href="/privacidade">Política de privacidade</a>. Encontrou um erro? <a href="/contato?assunto=erro">Avise pelo contato</a> para que possamos corrigir.</p>
+      <p>Ao utilizar o site, você concorda que o uso das informações é de sua inteira responsabilidade e que o iCalculei e seus responsáveis <b>não se responsabilizam por decisões tomadas, prejuízos ou danos</b> de qualquer natureza decorrentes do uso dos resultados apresentados. Leia os <a href="/termos-de-uso">Termos de uso</a> e a <a href="/privacidade">Política de privacidade</a>. Encontrou um erro? <a href="/contato?assunto=erro">Avise pelo contato</a> para que possamos corrigir.</p>
     </div>
     <div class="footer-inner">
-      <span>© <?= date('Y') ?> Vibe2000 · site gratuito · resultados estimados</span>
+      <span>© <?= date('Y') ?> iCalculei · site gratuito · resultados estimados</span>
       <nav aria-label="Institucional">
         <a href="/feriados">Feriados</a><a href="/sobre">Sobre</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a>
         <button type="button" class="footer-link" id="cookie-settings-link">Preferências de cookies</button>
@@ -139,7 +139,7 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
     <div class="cookie-inner">
       <div class="cookie-text">
         <h2 id="cookie-title">Este site usa cookies</h2>
-        <p>Usamos cookies necessários para o site funcionar, um contador de visitas próprio e anônimo e, com a sua permissão, cookies de publicidade personalizada (Google AdSense) para manter o Vibe2000 gratuito. Você pode mudar sua escolha quando quiser em "Preferências de cookies", no rodapé. <a href="/privacidade">Saiba mais</a>.</p>
+        <p>Usamos cookies necessários para o site funcionar, um contador de visitas próprio e anônimo e, com a sua permissão, cookies de publicidade personalizada (Google AdSense) para manter o iCalculei gratuito. Você pode mudar sua escolha quando quiser em "Preferências de cookies", no rodapé. <a href="/privacidade">Saiba mais</a>.</p>
         <div class="cookie-options" id="cookie-options" hidden>
           <label class="check"><input type="checkbox" checked disabled> <span><b>Necessários</b> · funcionamento, segurança e contagem anônima de visitas (sempre ativos)</span></label>
           <label class="check"><input type="checkbox" id="cookie-advertising"> <span><b>Publicidade personalizada</b> · anúncios do Google de acordo com seus interesses</span></label>

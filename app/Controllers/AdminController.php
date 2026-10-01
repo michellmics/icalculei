@@ -30,7 +30,7 @@ class AdminController
     private const MAX_LOGIN_ATTEMPTS = 5;
     private const LOGIN_LOCK_MINUTES = 15;
     private const MIN_PASSWORD_LENGTH = 10;
-    private const REMEMBER_COOKIE = 'v2k_remember';
+    private const REMEMBER_COOKIE = 'icalc_remember';
     private const REMEMBER_DAYS = 180;
 
     public function __construct()
@@ -46,7 +46,7 @@ class AdminController
     private function credentialsFingerprint(): string
     {
         // ADMIN_REMEMBER_KEY entra na conta: trocar a chave no .env desconecta todo mundo
-        return hash_hmac('sha256', config('admin_user') . "\0" . config('admin_password') . "\0" . config('admin_remember_key'), config('app_key') ?: 'vibe2000');
+        return hash_hmac('sha256', config('admin_user') . "\0" . config('admin_password') . "\0" . config('admin_remember_key'), config('app_key') ?: 'icalculei');
     }
 
     private function currentAdmin(): ?array
@@ -265,7 +265,7 @@ class AdminController
     public function pushTest(): void
     {
         $this->pushInput();
-        $delivered = PushNotifier::notifyAll('🔔 Teste do Vibe2000', 'As notificações estão funcionando. Você vai receber um aviso a cada ' . format_number(PushNotifier::VISITOR_MILESTONE) . ' visitantes.');
+        $delivered = PushNotifier::notifyAll('🔔 Teste do iCalculei', 'As notificações estão funcionando. Você vai receber um aviso a cada ' . format_number(PushNotifier::VISITOR_MILESTONE) . ' visitantes.');
         Http::json(['ok' => true, 'delivered' => $delivered, 'devices' => PushSubscription::count()]);
     }
 

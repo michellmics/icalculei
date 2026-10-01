@@ -1,4 +1,4 @@
-# Vibe2000 — guia para atualizações
+# iCalculei — guia para atualizações
 
 Portal de calculadoras, conversores e notícias (PHP 8.2 + MySQL, sem Composer/dependências, roda no cPanel).
 O dono pede atualizações de calculadoras e notícias com frequência; o conteúdo fica separado do código para isso.
@@ -116,7 +116,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Barra `#share-bar` em `site/tool.php`; lógica em `calculators.js` (`setupShareBar`, `applySharedValues`). O link leva os campos curtos na URL (`?id-do-campo=valor`, até 40 caracteres; sem textarea) e os botões `.segmented`; quem abre vê a mesma conta. `utm_source=whatsapp` ou `link` aparece em "Origem" no painel.
 
 ## Banner de compartilhamento (og:image)
-- `php bin/og-images.php` gera PNGs 1200×630 em `public/assets/img/og/` (um por calculadora + `vibe2000.png` geral + `feriados.png`), com GD e a fonte IBM Plex Sans (OFL) de `bin/fonts/`. Os PNGs vão no commit; o servidor não desenha nada.
+- `php bin/og-images.php` gera PNGs 1200×630 em `public/assets/img/og/` (um por calculadora + `icalculei.png` geral + `feriados.png`), com GD e a fonte IBM Plex Sans (OFL) de `bin/fonts/`. Os PNGs vão no commit; o servidor não desenha nada.
 - `share_banner($nome)` (helpers.php) devolve o endereço com `?v=` da data do arquivo. Notícias usam a própria foto.
 
 ## Encurtador de URL (/calculadoras/encurtador-url)

@@ -15,7 +15,7 @@ use App\Services\Ads;
     <article class="article-body">
       <h1><?= e($article['title']) ?></h1>
       <p class="lead"><?= e($article['summary']) ?></p>
-      <div class="article-byline">Redação Vibe2000 · <?= e(format_date($article['date'])) ?> · <?= e($article['category']) ?></div>
+      <div class="article-byline">Redação iCalculei · <?= e(format_date($article['date'])) ?> · <?= e($article['category']) ?></div>
       <figure class="article-photo">
         <img src="<?= e(news_image($article)) ?>" srcset="<?= e(news_image_srcset($article)) ?>" sizes="(max-width: 900px) 92vw, 780px" alt="<?= e($article['image_alt']) ?>" width="960" height="640" fetchpriority="high">
         <figcaption><?= e($article['image_credit']) ?></figcaption>

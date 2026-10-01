@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * CALCULADORAS DO VIBE2000
+ * CALCULADORAS DO ICALCULEI
  *
  * Cada item vira uma página em /calculadoras/{id}.
  *   seo_title título para o Google: a busca exata no começo (ex.: "Calculadora de IMC: Índice de Massa Corporal")
@@ -1586,7 +1586,7 @@ HTML,
             'lead' => 'Cole um link longo e receba um link curto para compartilhar no WhatsApp, nas redes sociais ou em materiais impressos. Grátis e sem cadastro.',
             'explainer' => <<<'HTML'
 <h2>Como funciona</h2>
-<p>O link curto fica no endereço do Vibe2000 e leva direto para o link original. O mesmo endereço longo sempre gera o mesmo link curto.</p>
+<p>O link curto fica no endereço do iCalculei e leva direto para o link original. O mesmo endereço longo sempre gera o mesmo link curto.</p>
 <p class="notice">Links usados para golpes, spam ou conteúdo ilegal são apagados sem aviso.</p>
 <h2>Perguntas frequentes</h2>
 <div class="faq">

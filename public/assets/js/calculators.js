@@ -1,4 +1,4 @@
-// Vibe2000 - lógica das calculadoras
+// iCalculei - lógica das calculadoras
 //
 // Cada calculadora tem o mesmo id usado em content/tools.php:
 //   html  = campos do formulário
@@ -1224,9 +1224,9 @@
         // Troca os valores de reserva pelas cotações do dia (buscadas pelo site.js)
         const sourceNotice = document.getElementById("currency-source");
         // Nas páginas de calculadora este arquivo roda antes do site.js (que busca as cotações):
-        // espera a página terminar de carregar para chamar window.Vibe2000
+        // espera a página terminar de carregar para chamar window.iCalculei
         const pageReady = document.readyState === "loading" ? new Promise((resolve) => document.addEventListener("DOMContentLoaded", resolve, { once: true })) : Promise.resolve();
-        const exchangePromise = pageReady.then(() => (window.Vibe2000?.getExchangeRates ? window.Vibe2000.getExchangeRates() : null));
+        const exchangePromise = pageReady.then(() => (window.iCalculei?.getExchangeRates ? window.iCalculei.getExchangeRates() : null));
         exchangePromise.then((exchange) => {
           if (!exchange) {
             sourceNotice.textContent = "Não foi possível buscar a cotação do dia. Os valores abaixo são aproximados: confira e ajuste em \"Cotações usadas\".";
@@ -2786,7 +2786,7 @@
           }
           const thisRequest = ++requestNumber;
           fipeResult.innerHTML = emptyDisplay("Desvalorização na FIPE", "Consultando a Tabela FIPE dos últimos 5 anos…");
-          window.Vibe2000?.registerToolUse("depreciacao-veiculo");
+          window.iCalculei?.registerToolUse("depreciacao-veiculo");
           const params = { tipo: typeSelect.value, marca: brandSelect.value, modelo: modelSelect.value, ano: yearSelect.value };
           let history;
           try {
@@ -3154,7 +3154,7 @@
           }
           submitButton.disabled = true;
           submitButton.textContent = "Calculando rota…";
-          window.Vibe2000?.registerToolUse("custo-de-viagem");
+          window.iCalculei?.registerToolUse("custo-de-viagem");
           try {
             trip = await fetchJson(`/api/viagem/rota?${new URLSearchParams({ origem: origin, destino: destination })}`);
           } catch (error) {
@@ -3561,7 +3561,7 @@
             <button type="button" data-value="file" aria-pressed="false">Imagem ou arquivo → Base64</button>
           </div>
           <div id="base64-text-fields">
-            <div class="field"><label for="base64-input" id="base64-input-label">Texto</label><textarea id="base64-input" spellcheck="false">Olá, Vibe2000! Acentos também funcionam: ção, ü, €.</textarea></div>
+            <div class="field"><label for="base64-input" id="base64-input-label">Texto</label><textarea id="base64-input" spellcheck="false">Olá, iCalculei! Acentos também funcionam: ção, ü, €.</textarea></div>
             <label class="check"><input type="checkbox" id="base64-url-safe"> Base64URL (troca + e / por - e _, sem "=" no fim; usado em tokens JWT e URLs)</label>
           </div>
           <div id="base64-file-fields" hidden>
@@ -4231,7 +4231,7 @@ Código inválido: 1234-567</textarea></div>
           ["Hora hh:mm", "\\b([01]\\d|2[0-3]):[0-5]\\d\\b", "", "Abre 08:30, fecha 18:00, inválido 25:61"],
           ["Placa de carro (Mercosul e antiga)", "\\b[A-Z]{3}-?\\d[A-Z\\d]\\d{2}\\b", "i", "Placas ABC1D23, ABC-1234 e XYZ9876"],
           ["Valor em reais", "R\\$\\s?\\d{1,3}(\\.\\d{3})*(,\\d{2})?", "", "Total R$ 1.234,56, frete R$ 20,00 e taxa R$5"],
-          ["URL", "https?:\\/\\/[\\w.-]+(\\/[\\w\\-./?%&=#]*)?", "i", "Veja https://vibe2000.com.br/calculadoras e http://exemplo.com/a?b=1"],
+          ["URL", "https?:\\/\\/[\\w.-]+(\\/[\\w\\-./?%&=#]*)?", "i", "Veja https://icalculei.com.br/calculadoras e http://exemplo.com/a?b=1"],
           ["Endereço IPv4", "\\b((25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b", "", "Servidores 192.168.0.1 e 10.0.0.254; inválido 300.1.1.1"],
           ["Cor HEX", "#([0-9a-f]{6}|[0-9a-f]{3})\\b", "i", "Cores #0e6b4f, #FFF e #12345 (inválida)"],
           ["Senha forte (8+, maiúscula, minúscula, número)", "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", "m", "fraca123\nForte2026\nSemNumero"],
@@ -4855,7 +4855,7 @@ Funciona com textos de qualquer tamanho.</textarea>
 
     "maiusculas": {
       html: `        <div class="calculator-body">
-          <div class="field"><label for="case-input">Texto</label><textarea id="case-input">bem-vindo ao vibe2000. aqui você converte textos em um clique.</textarea></div>
+          <div class="field"><label for="case-input">Texto</label><textarea id="case-input">bem-vindo ao icalculei. aqui você converte textos em um clique.</textarea></div>
           <div class="segmented" id="case-modes" role="group" aria-label="Conversão">
             <button type="button" data-value="upper" aria-pressed="true">MAIÚSCULAS</button>
             <button type="button" data-value="lower" aria-pressed="false">minúsculas</button>
@@ -5710,11 +5710,11 @@ Funciona com textos de qualquer tamanho.</textarea>
     const resultText = () => {
       const label = container.querySelector(".display-label")?.textContent.trim();
       const value = container.querySelector(".display-value")?.textContent.trim();
-      const toolName = document.querySelector(".tool-title")?.textContent.trim() || "Vibe2000";
+      const toolName = document.querySelector(".tool-title")?.textContent.trim() || "iCalculei";
       return label && value && value !== "—" ? `📊 ${toolName}: ${label} ${value}` : `📊 ${toolName}`;
     };
     document.getElementById("share-whatsapp").addEventListener("click", () => {
-      const message = `${resultText()}\nFiz essa conta no Vibe2000. Veja ou refaça com os seus números:\n${shareUrl(container, "whatsapp")}`;
+      const message = `${resultText()}\nFiz essa conta no iCalculei. Veja ou refaça com os seus números:\n${shareUrl(container, "whatsapp")}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener");
     });
     const copyButton = document.getElementById("share-copy");
@@ -5741,10 +5741,10 @@ Funciona com textos de qualquer tamanho.</textarea>
       applySharedValues(calculatorElement);
       setupShareBar(calculatorElement);
       // Avisa o contador de visitas no primeiro cálculo feito nesta página
-      calculatorElement.addEventListener("input", () => window.Vibe2000?.registerToolUse(calculatorElement.dataset.tool), { once: true });
+      calculatorElement.addEventListener("input", () => window.iCalculei?.registerToolUse(calculatorElement.dataset.tool), { once: true });
       calculatorElement.addEventListener("click", (clickEvent) => {
         if (clickEvent.target.closest("button")) {
-          window.Vibe2000?.registerToolUse(calculatorElement.dataset.tool);
+          window.iCalculei?.registerToolUse(calculatorElement.dataset.tool);
         }
       });
     }

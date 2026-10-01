@@ -1,8 +1,8 @@
 {
   "id": "/painel",
-  "name": "Vibe2000 · Painel",
-  "short_name": "Painel V2K",
-  "description": "Painel administrativo do Vibe2000: visitas, calculadoras, mensagens e atualização do site.",
+  "name": "iCalculei · Painel",
+  "short_name": "Painel iCalculei",
+  "description": "Painel administrativo do iCalculei: visitas, calculadoras, mensagens e atualização do site.",
   "lang": "pt-BR",
   "dir": "ltr",
   "start_url": "/painel",

@@ -1,4 +1,4 @@
-/* Vibe2000 - estilos do site e do painel
+/* iCalculei - estilos do site e do painel
    Tema sempre claro. Cores e fontes ficam nas variáveis do :root. */
 
 /* Fontes hospedadas no próprio site (public/assets/fonts, licença SIL OFL), sem depender do Google Fonts.
@@ -30,7 +30,7 @@
   font-display: swap;
 }
 
-/* Tema: sempre claro (escolha do dono do site). Layout: portal Vibe2000; início com busca, notícias e grade por categoria; página de ferramenta com visor de resultado + explicação; página de notícia com texto e ferramentas relacionadas; anúncios em lugares fixos e nomeados */
+/* Tema: sempre claro (escolha do dono do site). Layout: portal iCalculei; início com busca, notícias e grade por categoria; página de ferramenta com visor de resultado + explicação; página de notícia com texto e ferramentas relacionadas; anúncios em lugares fixos e nomeados */
 :root {
   --paper: #f3f5f2;
   --surface: #ffffff;

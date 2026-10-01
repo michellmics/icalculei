@@ -50,7 +50,7 @@ class PushNotifier
         }
         self::notifyAll(
             '🎉 ' . format_number($totalVisitors) . ' visitantes!',
-            'O Vibe2000 acaba de chegar a ' . format_number($totalVisitors) . ' visitantes desde o início. Toque para ver as visitas.'
+            'O iCalculei acaba de chegar a ' . format_number($totalVisitors) . ' visitantes desde o início. Toque para ver as visitas.'
         );
     }
 }

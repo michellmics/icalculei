@@ -60,8 +60,8 @@ class SiteController
 
         $this->render('site/home', [
             'pageTitle' => $activeCategory !== null && $searchTerm === ''
-                ? 'Calculadoras de ' . Content::categories()[$activeCategory] . ' Online e Grátis | Vibe2000'
-                : 'Calculadoras Online Grátis: Trabalhistas, Financeiras e Mais | Vibe2000',
+                ? 'Calculadoras de ' . Content::categories()[$activeCategory] . ' Online e Grátis | iCalculei'
+                : 'Calculadoras Online Grátis: Trabalhistas, Financeiras e Mais | iCalculei',
             'robotsMeta' => $searchTerm !== '' ? 'noindex, follow' : 'index, follow, max-image-preview:large',
             'structuredData' => $isSearching ? [] : StructuredData::home(),
             'searchTerm' => $searchTerm,
@@ -92,7 +92,7 @@ class SiteController
         $relatedNews = array_values(array_filter(Content::news(), fn (array $article) => in_array($toolId, $article['related_tools'], true)));
 
         $this->render('site/tool', [
-            'pageTitle' => tool_title($tool) . ' | Vibe2000',
+            'pageTitle' => tool_title($tool) . ' | iCalculei',
             'metaDescription' => $tool['lead'],
             'ogImage' => share_banner($tool['id']),
             'structuredData' => StructuredData::tool($tool, Content::categories()[$tool['category']] ?? ''),
@@ -111,7 +111,7 @@ class SiteController
         $activeNewsCategory = in_array($requestedCategory, $newsCategories, true) ? $requestedCategory : null;
 
         $this->render('site/news-list', [
-            'pageTitle' => 'Notícias sobre Dinheiro, Trabalho e Saúde | Vibe2000',
+            'pageTitle' => 'Notícias sobre Dinheiro, Trabalho e Saúde | iCalculei',
             'metaDescription' => 'Explicações sobre dinheiro, trabalho, saúde e o dia a dia, com a calculadora certa do lado.',
             'newsCategories' => $newsCategories,
             'activeNewsCategory' => $activeNewsCategory,
@@ -129,7 +129,7 @@ class SiteController
         }
 
         $this->render('site/article', [
-            'pageTitle' => $article['title'] . ' | Vibe2000',
+            'pageTitle' => $article['title'] . ' | iCalculei',
             'metaDescription' => $article['summary'],
             'ogType' => 'article',
             'ogImage' => url(news_image($article, false)),
@@ -143,25 +143,25 @@ class SiteController
 
     public function about(): void
     {
-        $this->render('pages/about', ['pageTitle' => 'Sobre o Vibe2000 | Calculadoras Online Grátis', 'metaDescription' => 'Conheça o Vibe2000: calculadoras e conversores gratuitos, feitos para resolver contas do dia a dia com explicação clara.', 'canonicalPath' => '/sobre'], 'sobre');
+        $this->render('pages/about', ['pageTitle' => 'Sobre o iCalculei | Calculadoras Online Grátis', 'metaDescription' => 'Conheça o iCalculei: calculadoras e conversores gratuitos, feitos para resolver contas do dia a dia com explicação clara.', 'canonicalPath' => '/sobre'], 'sobre');
     }
 
     public function terms(): void
     {
-        $this->render('pages/terms', ['pageTitle' => 'Termos de Uso | Vibe2000', 'metaDescription' => 'Termos de uso do Vibe2000: regras de uso do site, limites de responsabilidade e natureza estimativa dos resultados.', 'canonicalPath' => '/termos-de-uso'], 'termos');
+        $this->render('pages/terms', ['pageTitle' => 'Termos de Uso | iCalculei', 'metaDescription' => 'Termos de uso do iCalculei: regras de uso do site, limites de responsabilidade e natureza estimativa dos resultados.', 'canonicalPath' => '/termos-de-uso'], 'termos');
     }
 
     public function privacy(): void
     {
-        $this->render('pages/privacy', ['pageTitle' => 'Política de Privacidade | Vibe2000', 'metaDescription' => 'Como o Vibe2000 trata dados pessoais, cookies e anúncios, de acordo com a LGPD.', 'canonicalPath' => '/privacidade'], 'privacidade');
+        $this->render('pages/privacy', ['pageTitle' => 'Política de Privacidade | iCalculei', 'metaDescription' => 'Como o iCalculei trata dados pessoais, cookies e anúncios, de acordo com a LGPD.', 'canonicalPath' => '/privacidade'], 'privacidade');
     }
 
     public function contact(): void
     {
         Session::start();
         $this->render('pages/contact', [
-            'pageTitle' => 'Contato | Vibe2000',
-            'metaDescription' => 'Fale com o Vibe2000: sugestões, erros em calculadoras, anúncios e pedidos sobre dados pessoais.',
+            'pageTitle' => 'Contato | iCalculei',
+            'metaDescription' => 'Fale com o iCalculei: sugestões, erros em calculadoras, anúncios e pedidos sobre dados pessoais.',
             'canonicalPath' => '/contato',
             'subjects' => ContactMessage::SUBJECTS,
             'tools' => Content::tools(),
@@ -239,8 +239,8 @@ class SiteController
         if ($contactEmail === '' || config('env') === 'local') {
             return;
         }
-        $subjectLine = 'Vibe2000 · ' . ContactMessage::SUBJECTS[$input['subject']] . ($toolId ? ' · ' . $toolId : '');
-        $body = "Nova mensagem no Vibe2000\n\nNome: {$input['name']}\nE-mail: {$input['email']}\n\n{$input['message']}\n\nVeja no painel: " . url('/painel/mensagens');
+        $subjectLine = 'iCalculei · ' . ContactMessage::SUBJECTS[$input['subject']] . ($toolId ? ' · ' . $toolId : '');
+        $body = "Nova mensagem no iCalculei\n\nNome: {$input['name']}\nE-mail: {$input['email']}\n\n{$input['message']}\n\nVeja no painel: " . url('/painel/mensagens');
         // O e-mail da pessoa vai no Reply-To (sem quebras de linha, contra injeção de cabeçalho)
         $replyTo = str_replace(["\r", "\n"], '', $input['email']);
         if (!@mail($contactEmail, '=?UTF-8?B?' . base64_encode($subjectLine) . '?=', $body, "Content-Type: text/plain; charset=UTF-8\r\nReply-To: {$replyTo}")) {
@@ -296,6 +296,6 @@ class SiteController
 
     public function notFound(): void
     {
-        $this->render('site/not-found', ['pageTitle' => 'Página não encontrada | Vibe2000', 'robotsMeta' => 'noindex, follow', 'tools' => Content::toolsByIds(Content::showcase()['popular_tools'])], 'inicio', 404);
+        $this->render('site/not-found', ['pageTitle' => 'Página não encontrada | iCalculei', 'robotsMeta' => 'noindex, follow', 'tools' => Content::toolsByIds(Content::showcase()['popular_tools'])], 'inicio', 404);
     }
 }

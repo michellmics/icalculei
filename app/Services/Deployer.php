@@ -17,7 +17,7 @@ use ZipArchive;
  * Atualizar o site pelo painel (/painel/atualizar): baixa a branch do GitHub e aplica no servidor.
  * Não precisa de git nem de terminal no servidor (funciona no cPanel): usa a API do GitHub (ZIP) + ZipArchive.
  *
- *   .env:  DEPLOY_REPO=michellmics/vibe2000   DEPLOY_BRANCH=main
+ *   .env:  DEPLOY_REPO=michellmics/icalculei   DEPLOY_BRANCH=main
  *          DEPLOY_TOKEN=github_pat_…   (repositório privado: token "fine-grained" só com Contents: Read-only)
  *
  * O que faz: baixa o ZIP do último commit → confere → copia os arquivos por cima → apaga os que saíram
@@ -33,7 +33,7 @@ class Deployer
     public static function config(): array
     {
         return [
-            'repo' => Env::get('DEPLOY_REPO', 'michellmics/vibe2000'),
+            'repo' => Env::get('DEPLOY_REPO', 'michellmics/icalculei'),
             'branch' => Env::get('DEPLOY_BRANCH', 'main'),
             'token' => Env::get('DEPLOY_TOKEN', ''),
         ];
@@ -53,7 +53,7 @@ class Deployer
     private static function request(string $url, ?string $saveToFile = null): array
     {
         $settings = self::config();
-        $headers = ['User-Agent: vibe2000-deploy', 'Accept: application/vnd.github+json', 'X-GitHub-Api-Version: 2022-11-28'];
+        $headers = ['User-Agent: icalculei-deploy', 'Accept: application/vnd.github+json', 'X-GitHub-Api-Version: 2022-11-28'];
         if ($settings['token'] !== '') {
             $headers[] = 'Authorization: Bearer ' . $settings['token'];
         }
@@ -148,7 +148,7 @@ class Deployer
             return ['ok' => false, 'steps' => ['Já tem uma atualização rodando. Espere ela terminar.'], 'commit' => null];
         }
 
-        $tempFolder = sys_get_temp_dir() . '/vibe2000-deploy-' . bin2hex(random_bytes(6));
+        $tempFolder = sys_get_temp_dir() . '/icalculei-deploy-' . bin2hex(random_bytes(6));
         $zipFile = $tempFolder . '.zip';
         $commit = null;
         try {

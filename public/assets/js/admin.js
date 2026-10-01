@@ -1,4 +1,4 @@
-// Vibe2000 - painel → Visitas: gráficos (Chart.js) e o "online agora", que atualiza sozinho a cada 10 s.
+// iCalculei - painel → Visitas: gráficos (Chart.js) e o "online agora", que atualiza sozinho a cada 10 s.
 // Mesmo modelo do painel do Pote Político.
 
 (() => {

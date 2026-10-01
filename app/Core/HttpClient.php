@@ -13,7 +13,7 @@ use RuntimeException;
  */
 class HttpClient
 {
-    private const USER_AGENT = 'Vibe2000/1.0 (+https://vibe2000.com.br/contato)';
+    private const USER_AGENT = 'iCalculei/1.0 (+https://icalculei.com.br/contato)';
 
     /**
      * Faz o pedido e devolve [código HTTP, corpo da resposta].

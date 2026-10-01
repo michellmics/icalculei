@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Gera os banners de compartilhamento (og:image, 1200×630) que aparecem no WhatsApp, Facebook, LinkedIn etc.
  *   php bin/og-images.php
- * Cria public/assets/img/og/{id-da-calculadora}.png, vibe2000.png (página inicial e demais páginas) e feriados.png.
+ * Cria public/assets/img/og/{id-da-calculadora}.png, icalculei.png (página inicial e demais páginas) e feriados.png.
  * Rode de novo depois de criar ou renomear uma calculadora (precisa da extensão GD com FreeType).
  * Fonte: IBM Plex Sans (licença OFL, em bin/fonts).
  */
@@ -29,7 +29,7 @@ if (!is_dir(OUTPUT_DIR)) {
 $content = require BASE_PATH . '/content/tools.php';
 $created = 0;
 
-drawBanner(OUTPUT_DIR . '/vibe2000.png', 'CALCULADORAS GRÁTIS', 'Calculadoras e conversores para o dia a dia', 'Salário, rescisão, FGTS, investimentos, financiamento, IPVA, feriados e muito mais.');
+drawBanner(OUTPUT_DIR . '/icalculei.png', 'CALCULADORAS GRÁTIS', 'Calculadoras e conversores para o dia a dia', 'Salário, rescisão, FGTS, investimentos, financiamento, IPVA, feriados e muito mais.');
 drawBanner(OUTPUT_DIR . '/feriados.png', 'CALENDÁRIO', 'Feriados nacionais, estaduais e da sua capital', 'Dia da semana, feriadões e dias úteis de cada mês, para os 27 estados.');
 $created += 2;
 foreach ($content['tools'] as $toolId => $tool) {
@@ -64,9 +64,9 @@ function drawBanner(string $path, string $kicker, string $title, string $descrip
     imagefilledellipse($image, WIDTH - 40, 70, 360, 360, color($image, '#22362c'));
     imagefilledellipse($image, WIDTH - 40, 70, 220, 220, color($image, '#284034'));
 
-    // Marca: quadrado verde com a calculadora + "Vibe2000"
+    // Marca: quadrado verde com a calculadora + "iCalculei"
     drawLogo($image, MARGIN, 56, 76, $green, $white);
-    imagettftext($image, 38, 0, MARGIN + 98, 110, $white, FONT_BOLD, 'Vibe2000');
+    imagettftext($image, 38, 0, MARGIN + 98, 110, $white, FONT_BOLD, 'iCalculei');
 
     // Categoria
     imagettftext($image, 22, 0, MARGIN, 200, $muted, FONT_BOLD, spaced($kicker));
@@ -104,7 +104,7 @@ function drawBanner(string $path, string $kicker, string $title, string $descrip
     }
 
     // Rodapé: endereço do site e o "botão"
-    imagettftext($image, 30, 0, MARGIN, HEIGHT - 58, $lime, FONT_BOLD, 'vibe2000.com.br');
+    imagettftext($image, 30, 0, MARGIN, HEIGHT - 58, $lime, FONT_BOLD, 'icalculei.com.br');
     $buttonText = 'Calcule grátis  →';
     $buttonBox = imagettfbbox(26, 0, FONT_BOLD, $buttonText);
     $buttonWidth = $buttonBox[2] - $buttonBox[0] + 56;

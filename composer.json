@@ -1,6 +1,6 @@
 {
-    "name": "codemaze/vibe2000",
-    "description": "Vibe2000 - portal de calculadoras, conversores e notícias",
+    "name": "codemaze/icalculei",
+    "description": "iCalculei - portal de calculadoras, conversores e notícias",
     "type": "project",
     "license": "proprietary",
     "require": {

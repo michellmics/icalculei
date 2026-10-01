@@ -1,4 +1,4 @@
-// Vibe2000 - Cloudflare Worker que busca a Tabela FIPE em nome do site.
+// iCalculei - Cloudflare Worker que busca a Tabela FIPE em nome do site.
 //
 // Por quê: o site da FIPE só responde a acessos do Brasil (HTTP 403 para fora). A hospedagem fica nos EUA,
 // então o servidor do site nunca consegue. O Worker roda no data center do Cloudflare mais perto de quem
@@ -9,13 +9,13 @@
 // depreciação; devolve { vehicle, points } igual a /api/fipe/historico. Só aceita o próprio site (cabeçalho Origin).
 //
 // Como instalar (painel do Cloudflare):
-//   1. Workers & Pages → Create → Create Worker → nome "vibe2000-fipe" → Deploy.
+//   1. Workers & Pages → Create → Create Worker → nome "icalculei-fipe" → Deploy.
 //   2. Edit code → apague o exemplo, cole este arquivo inteiro → Deploy.
-//   3. No .env do servidor: FIPE_PROXY_URL=https://vibe2000-fipe.SEU-USUARIO.workers.dev
+//   3. No .env do servidor: FIPE_PROXY_URL=https://icalculei-fipe.SEU-USUARIO.workers.dev
 
 const FIPE_API = "https://veiculos.fipe.org.br/api/veiculos/";
 // Sites que podem chamar o /historico pelo navegador
-const ALLOWED_ORIGINS = ["https://vibe2000.com.br", "https://www.vibe2000.com.br", "http://localhost:8000"];
+const ALLOWED_ORIGINS = ["https://icalculei.com.br", "https://www.icalculei.com.br", "http://localhost:8000"];
 const VEHICLE_TYPES = { 1: "carro", 2: "moto", 3: "caminhao" };
 const HISTORY_YEARS = 5;
 const ZERO_KM_YEAR = 32000; // a FIPE usa o "ano" 32000 para veículo zero km
@@ -38,7 +38,7 @@ function fipeRequest(endpoint, body) {
       "Referer": "https://veiculos.fipe.org.br/",
       "Accept": "application/json",
       // Sem User-Agent o Cloudflare da FIPE responde 403; usa o mesmo do site
-      "User-Agent": "Vibe2000/1.0 (+https://vibe2000.com.br/contato)",
+      "User-Agent": "iCalculei/1.0 (+https://icalculei.com.br/contato)",
     },
     body,
   });

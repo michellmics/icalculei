@@ -17,8 +17,8 @@ class Env
 
     /**
      * Qual .env vale (o primeiro que existir), igual ao projeto direitaconservada:
-     *   1. um nível acima do projeto   (site em /home/USUARIO/vibe2000 → /home/USUARIO/.env)
-     *   2. dois níveis acima           (site em /home/USUARIO/public_html/vibe2000 → /home/USUARIO/.env)
+     *   1. um nível acima do projeto   (site em /home/USUARIO/icalculei → /home/USUARIO/.env)
+     *   2. dois níveis acima           (site em /home/USUARIO/public_html/icalculei → /home/USUARIO/.env)
      *   3. na raiz do projeto          (desenvolvimento)
      * Os dois primeiros ficam fora do alcance do navegador e não são tocados pelo "Atualizar site".
      */

@@ -1,4 +1,4 @@
-// Vibe2000 - service worker do SITE (PWA "Vibe2000", escopo "/").
+// iCalculei - service worker do SITE (PWA "iCalculei", escopo "/").
 //
 // Páginas: busca na internet primeiro e guarda uma cópia; sem internet, abre a cópia
 // (as calculadoras funcionam offline, porque a conta é feita no navegador).
@@ -7,9 +7,9 @@
 //
 // Mudou a lógica deste arquivo? Aumente o CACHE_VERSION para apagar os caches antigos.
 
-const CACHE_VERSION = "v2";
-const PAGES_CACHE = `vibe2000-pages-${CACHE_VERSION}`;
-const ASSETS_CACHE = `vibe2000-assets-${CACHE_VERSION}`;
+const CACHE_VERSION = "v3";
+const PAGES_CACHE = `icalculei-pages-${CACHE_VERSION}`;
+const ASSETS_CACHE = `icalculei-assets-${CACHE_VERSION}`;
 const OFFLINE_PAGE = "/offline.html";
 const MAX_SAVED_PAGES = 40;
 const NEVER_CACHE = /^\/(painel|api\/|l\/|sitemap\.xml|robots\.txt|sw\.js|sw-painel\.js)/;
@@ -25,7 +25,7 @@ self.addEventListener("activate", (activateEvent) => {
   activateEvent.waitUntil(
     caches.keys()
       .then((cacheNames) => Promise.all(cacheNames
-        .filter((cacheName) => cacheName.startsWith("vibe2000-") && ![PAGES_CACHE, ASSETS_CACHE].includes(cacheName))
+        .filter((cacheName) => cacheName.startsWith("icalculei-") && ![PAGES_CACHE, ASSETS_CACHE].includes(cacheName))
         .map((cacheName) => caches.delete(cacheName))))
       .then(() => self.clients.claim()),
   );

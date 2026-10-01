@@ -1,6 +1,6 @@
 <?php
 /**
- * Marca do Vibe2000: uma calculadora dentro do quadrado verde.
+ * Marca do iCalculei: uma calculadora dentro do quadrado verde.
  * O desenho usa a cor do texto (currentColor), então acompanha as cores do .logo-mark.
  */
 ?>

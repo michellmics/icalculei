@@ -1,4 +1,4 @@
-// Vibe2000 - service worker do PAINEL (PWA "Painel V2K", escopo "/painel").
+// iCalculei - service worker do PAINEL (PWA "Painel iCalculei", escopo "/painel").
 //
 // O painel mostra dados de visitas e mensagens: nada disso é guardado no aparelho.
 // Tudo vem sempre da internet; sem conexão, aparece só o aviso de offline.
@@ -6,8 +6,8 @@
 //
 // Mudou a lógica deste arquivo? Aumente o CACHE_VERSION.
 
-const CACHE_VERSION = "v2";
-const PANEL_CACHE = `vibe2000-painel-${CACHE_VERSION}`;
+const CACHE_VERSION = "v3";
+const PANEL_CACHE = `icalculei-painel-${CACHE_VERSION}`;
 const OFFLINE_PAGE = "/offline-painel.html";
 
 self.addEventListener("install", (installEvent) => {
@@ -20,7 +20,7 @@ self.addEventListener("activate", (activateEvent) => {
   activateEvent.waitUntil(
     caches.keys()
       .then((cacheNames) => Promise.all(cacheNames
-        .filter((cacheName) => cacheName.startsWith("vibe2000-painel-") && cacheName !== PANEL_CACHE)
+        .filter((cacheName) => cacheName.startsWith("icalculei-painel-") && cacheName !== PANEL_CACHE)
         .map((cacheName) => caches.delete(cacheName))))
       .then(() => self.clients.claim()),
   );
@@ -41,7 +41,7 @@ self.addEventListener("push", (pushEvent) => {
   } catch {
     message = { body: pushEvent.data ? pushEvent.data.text() : "" };
   }
-  pushEvent.waitUntil(self.registration.showNotification(message.title || "Vibe2000", {
+  pushEvent.waitUntil(self.registration.showNotification(message.title || "iCalculei", {
     body: message.body || "",
     icon: "/icons/painel-192.png",
     data: { url: message.url || "/painel/visitas" },

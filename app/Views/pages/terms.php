@@ -11,10 +11,10 @@
     <?php if (config("owner_name") === "" || config("contact_email") === ""): ?><p class="notice">Os trechos em amarelo devem ser preenchidos no arquivo .env (SITE_OWNER_NAME, SITE_OWNER_DOCUMENT, CONTACT_EMAIL, SITE_OWNER_CITY). Recomenda-se a revisão deste texto por um advogado antes da publicação.</p><?php endif; ?>
 
     <h2>1. Aceitação</h2>
-    <p>Estes Termos de Uso regulam o acesso e a utilização do site Vibe2000 (o "Site"), mantido por <?= owner_info("owner_name", "nome completo ou razão social") ?>, inscrito no <?= owner_info("owner_document", "CPF ou CNPJ") ?> (o "Responsável"). Ao acessar ou utilizar o Site, você declara que leu, entendeu e concorda com estes Termos e com a Política de Privacidade. Se não concordar, não utilize o Site.</p>
+    <p>Estes Termos de Uso regulam o acesso e a utilização do site iCalculei (o "Site"), mantido por <?= owner_info("owner_name", "nome completo ou razão social") ?>, inscrito no <?= owner_info("owner_document", "CPF ou CNPJ") ?> (o "Responsável"). Ao acessar ou utilizar o Site, você declara que leu, entendeu e concorda com estes Termos e com a Política de Privacidade. Se não concordar, não utilize o Site.</p>
 
-    <h2>2. O que é o Vibe2000</h2>
-    <p>O Vibe2000 é um portal <b>gratuito</b> que oferece calculadoras, conversores e conteúdos informativos (notícias e artigos) sobre temas como finanças, trabalho, saúde, datas e o dia a dia. O Site é mantido com a exibição de anúncios publicitários.</p>
+    <h2>2. O que é o iCalculei</h2>
+    <p>O iCalculei é um portal <b>gratuito</b> que oferece calculadoras, conversores e conteúdos informativos (notícias e artigos) sobre temas como finanças, trabalho, saúde, datas e o dia a dia. O Site é mantido com a exibição de anúncios publicitários.</p>
 
     <h2>3. Natureza das informações e dos resultados</h2>
     <p>As calculadoras e conversores apresentam <b>estimativas</b>, calculadas a partir dos dados informados pelo próprio usuário e das regras, fórmulas e tabelas oficiais conhecidas na data de revisão indicada em cada ferramenta.</p>
@@ -38,7 +38,7 @@
     <p>O Site exibe anúncios fornecidos por terceiros, como o Google AdSense, e pode conter links para sites externos. O Responsável não controla e não se responsabiliza pelo conteúdo, pelos produtos, pelos serviços ou pelas práticas de privacidade desses terceiros. Qualquer relação estabelecida com anunciantes é de responsabilidade exclusiva do usuário e do anunciante.</p>
 
     <h2>9. Propriedade intelectual</h2>
-    <p>Os textos, o layout, a marca Vibe2000, os códigos e demais elementos do Site pertencem ao Responsável ou são utilizados com autorização, e são protegidos pela legislação de direitos autorais e de propriedade intelectual. É permitido compartilhar links para as páginas do Site. A reprodução total ou parcial do conteúdo sem autorização prévia é proibida.</p>
+    <p>Os textos, o layout, a marca iCalculei, os códigos e demais elementos do Site pertencem ao Responsável ou são utilizados com autorização, e são protegidos pela legislação de direitos autorais e de propriedade intelectual. É permitido compartilhar links para as páginas do Site. A reprodução total ou parcial do conteúdo sem autorização prévia é proibida.</p>
 
     <h2>10. Correções e alterações</h2>
     <p>O Responsável pode, a qualquer momento e sem aviso prévio, corrigir, atualizar, alterar, suspender ou retirar ferramentas e conteúdos, bem como alterar estes Termos. A versão vigente estará sempre disponível nesta página, com a data da última atualização. O uso continuado do Site após alterações significa concordância com a nova versão.</p>

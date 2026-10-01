@@ -178,7 +178,7 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         <span class="trip-promo-button">📅 Ver calendário de feriados</span>
       </a>
       <section class="side-box install-side-box" data-install-area hidden>
-        <h3>Vibe2000 no celular</h3>
+        <h3>iCalculei no celular</h3>
         <div class="install-side-row">
           <img src="/icons/site-192.png" alt="" width="48" height="48" loading="lazy">
           <p>Instale o app: abre num toque, em tela cheia, e as calculadoras funcionam até sem internet.</p>

@@ -1,4 +1,4 @@
-// Vibe2000 - convite para instalar o app (PWA do site). Mesmo modelo do projeto direitaconservada.
+// iCalculei - convite para instalar o app (PWA do site). Mesmo modelo do projeto direitaconservada.
 //
 // Qualquer elemento com data-install-app vira o botão "Instalar o app".
 // Elementos com data-install-area (ex.: o quadro da lateral) aparecem junto com os botões.
@@ -15,7 +15,7 @@
   const isAndroid = /android/i.test(navigator.userAgent);
   const isPhone = isIos || isAndroid || matchMedia("(pointer: coarse) and (max-width: 820px)").matches;
   const APP_ICON = "/icons/site-192.png";
-  const DISMISS_KEY = "vibe2000-install-dismissed";
+  const DISMISS_KEY = "icalculei-install-dismissed";
   const DISMISS_DAYS = 7;
   const AUTO_OPEN_SECONDS = 8;
   let installPrompt = null; // o evento "dá para instalar" do navegador (Android / PC)
@@ -123,7 +123,7 @@
           <img class="install-app-icon" src="${APP_ICON}" alt="">
         </div>
         <h2 id="install-title">Calculadoras no bolso</h2>
-        <p class="install-subtitle">Instale o <b>Vibe2000</b>: abre num toque, em tela cheia, funciona até sem internet e não ocupa espaço.</p>
+        <p class="install-subtitle">Instale o <b>iCalculei</b>: abre num toque, em tela cheia, funciona até sem internet e não ocupa espaço.</p>
 
         <div class="install-quick">
           <button type="button" class="action-button install-now" data-install-now>📲 Instalar agora</button>
@@ -135,7 +135,7 @@
             <div class="phone-screen">
               <div class="phone-scene scene-1">${guide.bar}<span class="phone-finger"></span></div>
               <div class="phone-scene scene-2">${guide.bar}${guide.menu}<span class="phone-finger"></span></div>
-              <div class="phone-scene scene-3"><div class="phone-home">${otherApps}<b><img src="${APP_ICON}" alt=""><small>Vibe2000</small></b></div></div>
+              <div class="phone-scene scene-3"><div class="phone-home">${otherApps}<b><img src="${APP_ICON}" alt=""><small>iCalculei</small></b></div></div>
             </div>
           </div>
           <ol class="install-steps">

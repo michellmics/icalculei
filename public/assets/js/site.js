@@ -1,4 +1,4 @@
-// Vibe2000 - scripts de todas as páginas públicas:
+// iCalculei - scripts de todas as páginas públicas:
 // contador de visitas, aviso de cookies, anúncios e formulário de contato.
 
 (() => {
@@ -34,7 +34,7 @@
 
   /* ---------- Aviso de cookies (LGPD) ---------- */
   // A escolha fica guardada neste navegador. Anúncios personalizados só com permissão.
-  const COOKIE_STORAGE_KEY = "vibe2000-cookie-consent";
+  const COOKIE_STORAGE_KEY = "icalculei-cookie-consent";
   const cookieBanner = document.getElementById("cookie-banner");
   const cookieOptions = document.getElementById("cookie-options");
   const advertisingCheckbox = document.getElementById("cookie-advertising");
@@ -123,7 +123,7 @@
 
   // Chamado pelo calculators.js no primeiro cálculo de cada página
   let toolUseRegistered = false;
-  window.Vibe2000 = {
+  window.iCalculei = {
     // Usado pelo conversor de moedas para trocar as cotações de exemplo pelas do dia
     getExchangeRates: () => getExchangeRates(),
     registerToolUse(toolId) {
@@ -139,7 +139,7 @@
   // Principal: AwesomeAPI (brasileira, atualiza durante o dia).
   // Reserva: Frankfurter (Banco Central Europeu, atualiza uma vez por dia útil).
   // O resultado fica guardado por 10 minutos neste navegador para não chamar a API a cada página.
-  const EXCHANGE_CACHE_KEY = "vibe2000-exchange-rates";
+  const EXCHANGE_CACHE_KEY = "icalculei-exchange-rates";
   const EXCHANGE_CACHE_MINUTES = 10;
   const PRIMARY_EXCHANGE_URL = "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,ARS-BRL";
   const BACKUP_EXCHANGE_URL = "https://api.frankfurter.dev/v1/latest?from=USD&to=BRL,EUR,GBP";

@@ -1,4 +1,4 @@
-# Vibe2000
+# iCalculei
 
 Portal de calculadoras, conversores e notícias. PHP 8.2+ e MySQL, sem bibliotecas externas.
 
@@ -52,9 +52,9 @@ uso das calculadoras (com aviso de revisão) e mensagens do formulário de conta
 
 ## Publicar no cPanel
 
-1. Envie a pasta do projeto para fora do `public_html` (ex.: `/home/usuario/vibe2000`).
-2. Aponte o domínio para `vibe2000/public` (ou coloque o conteúdo de `public/` no `public_html` e ajuste o caminho do `bootstrap.php` no `index.php`).
-3. Crie o `.env` no servidor **fora da pasta do projeto**, um ou dois níveis acima (ex.: projeto em `/home/USUARIO/public_html/vibe2000` → `/home/USUARIO/.env`), com `APP_ENV=production`, `APP_DEBUG=false`, `ADS_PLACEHOLDERS=false` e o `APP_URL` com https.
+1. Envie a pasta do projeto para fora do `public_html` (ex.: `/home/usuario/icalculei`).
+2. Aponte o domínio para `icalculei/public` (ou coloque o conteúdo de `public/` no `public_html` e ajuste o caminho do `bootstrap.php` no `index.php`).
+3. Crie o `.env` no servidor **fora da pasta do projeto**, um ou dois níveis acima (ex.: projeto em `/home/USUARIO/public_html/icalculei` → `/home/USUARIO/.env`), com `APP_ENV=production`, `APP_DEBUG=false`, `ADS_PLACEHOLDERS=false` e o `APP_URL` com https.
 4. Rode `php bin/migrate.php` pelo Terminal do cPanel e defina `ADMIN_USER` e `ADMIN_PASSWORD` no `.env` do servidor.
 5. Para as próximas versões: faça commit e push no GitHub e clique em **Painel → 🚀 Atualizar site** (baixa o código e roda as migrations). Se o repositório for privado, preencha `DEPLOY_TOKEN` no `.env` do servidor. O PHP do servidor precisa das extensões curl e zip.
 6. Ative o HTTPS forçado no `public/.htaccess` (linhas comentadas).
