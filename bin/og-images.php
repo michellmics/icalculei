@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 require __DIR__ . '/../app/bootstrap.php';
+require __DIR__ . '/logo.php';
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -64,8 +65,10 @@ function drawBanner(string $path, string $kicker, string $title, string $descrip
     imagefilledellipse($image, WIDTH - 40, 70, 360, 360, color($image, '#22362c'));
     imagefilledellipse($image, WIDTH - 40, 70, 220, 220, color($image, '#284034'));
 
-    // Marca: quadrado verde com a calculadora + "iCalculei"
-    drawLogo($image, MARGIN, 56, 76, $green, $white);
+    // Marca: logo ("i" + ✓ no quadrado verde) + "iCalculei"
+    $logo = renderLogo(76, '#0e6b4f', '#ffffff');
+    imagecopy($image, $logo, MARGIN, 56, 0, 0, 76, 76);
+    imagedestroy($logo);
     imagettftext($image, 38, 0, MARGIN + 98, 110, $white, FONT_BOLD, 'iCalculei');
 
     // Categoria
@@ -114,24 +117,6 @@ function drawBanner(string $path, string $kicker, string $title, string $descrip
 
     imagepng($image, $path, 9);
     imagedestroy($image);
-}
-
-/**
- * Calculadora simplificada dentro de um quadrado verde de cantos redondos (a mesma ideia do logo do site).
- */
-function drawLogo(GdImage $image, int $x, int $y, int $size, int $boxColor, int $lineColor): void
-{
-    roundedRectangle($image, $x, $y, $x + $size, $y + $size, (int) ($size * 0.22), $boxColor);
-    $scale = $size / 24;
-    imagesetthickness($image, max(2, (int) round(1.8 * $scale)));
-    $point = fn (float $value, int $origin) => (int) round($origin + $value * $scale);
-    imagerectangle($image, $point(5.5, $x), $point(3, $y), $point(18.5, $x), $point(21, $y), $lineColor);
-    imagerectangle($image, $point(8, $x), $point(5.5, $y), $point(16, $x), $point(9, $y), $lineColor);
-    foreach ([[9, 12.5], [12, 12.5], [15, 12.5], [9, 15.5], [12, 15.5], [9, 18.5], [12, 18.5]] as [$dotX, $dotY]) {
-        imagefilledellipse($image, $point($dotX, $x), $point($dotY, $y), (int) (2 * $scale), (int) (2 * $scale), $lineColor);
-    }
-    imageline($image, $point(15, $x), $point(15.5, $y), $point(15, $x), $point(18.5, $y), $lineColor);
-    imagesetthickness($image, 1);
 }
 
 function roundedRectangle(GdImage $image, int $left, int $top, int $right, int $bottom, int $radius, int $color): void

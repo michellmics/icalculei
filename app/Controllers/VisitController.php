@@ -64,7 +64,7 @@ class VisitController
                 'secure' => Session::isHttps(),
             ]);
         }
-        $visitor = md5('v2k-visita|' . $visitorId);
+        $visitor = md5('icalculei-visita|' . $visitorId);
         $device = $this->detectDevice($userAgent);
 
         try {

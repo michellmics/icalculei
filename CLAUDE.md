@@ -51,7 +51,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 
 ## PWA (dois apps)
 - Site: `public/manifest.webmanifest` + `public/sw.js` (guarda páginas visitadas para abrir offline). Painel: `public/manifest-painel.webmanifest` + `public/sw-painel.js` (não guarda dados).
-- Ícones em `public/icons/` (site-* verde, painel-* escuro). Mudou a lógica de um service worker? Aumente o `CACHE_VERSION` dele.
+- Ícones em `public/icons/` (site-* verde, painel-* escuro), gerados por `php bin/app-icons.php`. Logo ("i" + ✓): `app/Views/partials/logo-mark.php`, `public/favicon.svg` e `bin/logo.php` (ícones e banners) têm o mesmo desenho; mudou um, mude os três. Mudou a lógica de um service worker? Aumente o `CACHE_VERSION` dele.
 - Convite "Instalar o app" (só no site): `public/assets/js/install-app.js` + estilos `.install-*` no site.css. Botões: qualquer elemento com `data-install-app` (topo, rodapé e lateral da home).
 
 ## SEO
