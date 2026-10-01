@@ -43,7 +43,7 @@ class SiteController
             'canonicalPath' => '/',
             'structuredData' => [],
             'ogType' => 'website',
-            'robotsMeta' => 'index, follow',
+            'robotsMeta' => 'index, follow, max-image-preview:large',
             'searchTerm' => '',
             'activeCategory' => null,
         ];
@@ -62,7 +62,7 @@ class SiteController
             'pageTitle' => $activeCategory !== null && $searchTerm === ''
                 ? 'Calculadoras de ' . Content::categories()[$activeCategory] . ' Online e Grátis | Vibe2000'
                 : 'Calculadoras Online Grátis: Trabalhistas, Financeiras e Mais | Vibe2000',
-            'robotsMeta' => $searchTerm !== '' ? 'noindex, follow' : 'index, follow',
+            'robotsMeta' => $searchTerm !== '' ? 'noindex, follow' : 'index, follow, max-image-preview:large',
             'structuredData' => $isSearching ? [] : StructuredData::home(),
             'searchTerm' => $searchTerm,
             'activeCategory' => $activeCategory,
@@ -267,9 +267,12 @@ class SiteController
         foreach ($news as $article) {
             $pages[] = ['/noticias/' . $article['id'], $article['date']];
         }
-        // Calendário de feriados: ano atual e o próximo, nacional e por estado
+        // Calendário de feriados: ano atual e o próximo, nacional, por mês e por estado
         foreach ([(int) date('Y'), (int) date('Y') + 1] as $holidayYear) {
             $pages[] = ['/feriados/' . $holidayYear, Holidays::reviewed()];
+            foreach (Holidays::MONTH_SLUGS as $monthSlug) {
+                $pages[] = ['/feriados/' . $holidayYear . '/' . $monthSlug, Holidays::reviewed()];
+            }
             foreach (array_keys(Holidays::states()) as $stateCode) {
                 $pages[] = ['/feriados/' . $holidayYear . '/' . $stateCode, Holidays::reviewed()];
             }
@@ -288,7 +291,7 @@ class SiteController
     public function robots(): void
     {
         header('Content-Type: text/plain; charset=utf-8');
-        echo "User-agent: *\nAllow: /\nDisallow: /painel\nDisallow: /api/\n\nSitemap: " . url('/sitemap.xml') . "\n";
+        echo "User-agent: *\nAllow: /\nDisallow: /painel\nDisallow: /api/\nDisallow: /l/\n\nSitemap: " . url('/sitemap.xml') . "\n";
     }
 
     public function notFound(): void

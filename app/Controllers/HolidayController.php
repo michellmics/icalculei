@@ -8,12 +8,14 @@ use App\Core\Http;
 use App\Core\View;
 use App\Services\Content;
 use App\Services\Holidays;
+use App\Services\StructuredData;
 
 /**
  * Calendário de feriados:
  *   /feriados                       vai para o ano atual
  *   /feriados/2026                  nacionais e pontos facultativos
  *   /feriados/2026/sp               + feriados do estado e da capital
+ *   /feriados/2026/novembro         feriados do mês (nacionais e de todos os estados e capitais)
  *   /feriados/2026/agenda           arquivo .ics (Google Agenda, iPhone, Outlook); /feriados/2026/sp/agenda com o estado
  */
 class HolidayController
@@ -30,6 +32,12 @@ class HolidayController
 
     public function state(string $year, string $stateCode): void
     {
+        // /feriados/2026/novembro usa a mesma rota dos estados (/feriados/2026/sp)
+        $month = array_search($stateCode, Holidays::MONTH_SLUGS, true);
+        if ($month !== false) {
+            $this->showMonth($year, $month);
+            return;
+        }
         $this->show($year, $stateCode);
     }
 
@@ -97,6 +105,68 @@ class HolidayController
             'onWorkdays' => count(array_filter($realHolidays, fn (array $holiday) => $holiday['isWorkday'])),
             'longWeekends' => count(array_filter($realHolidays, fn (array $holiday) => $holiday['bridge'] !== '')),
             'next' => in_array($yearNumber, [$currentYear, $currentYear + 1], true) ? Holidays::next($stateCode) : null,
+            'reviewed' => Holidays::reviewed(),
+        ]);
+    }
+
+    /**
+     * Feriados de um mês (/feriados/2026/novembro): nacionais, pontos facultativos,
+     * estaduais e das capitais de todos os estados, dias úteis e feriadões.
+     */
+    private function showMonth(string $year, int $month): void
+    {
+        $yearNumber = $this->validate($year, null);
+        if ($yearNumber === null) {
+            return;
+        }
+        $monthName = Holidays::MONTH_NAMES[$month];
+        $monthTitle = mb_convert_case($monthName, MB_CASE_TITLE);
+        $path = '/feriados/' . $yearNumber . '/' . Holidays::MONTH_SLUGS[$month];
+        $yearHolidays = Holidays::forYear($yearNumber);
+        $holidays = array_values(array_filter($yearHolidays, fn (array $holiday) => (int) substr($holiday['date'], 5, 2) === $month));
+        $national = array_values(array_filter($holidays, fn (array $holiday) => $holiday['type'] === 'nacional'));
+        $longWeekends = array_values(array_filter($national, fn (array $holiday) => $holiday['bridge'] !== ''));
+        $localHolidays = Holidays::localForMonth($yearNumber, $month);
+        $workdays = Holidays::workdaysByMonth($yearNumber, $yearHolidays)[$month];
+        $states = Holidays::states();
+
+        $describe = fn (array $holiday) => implode(' / ', $holiday['names']) . ' (' . $holiday['weekday'] . ', ' . (new \DateTimeImmutable($holiday['date']))->format('d/m') . ')';
+        $joinList = fn (array $items) => count($items) > 1 ? implode(', ', array_slice($items, 0, -1)) . ' e ' . end($items) : (string) ($items[0] ?? '');
+        $statesWithHoliday = array_values(array_unique(array_map(fn (array $holiday) => $states[$holiday['stateCode']]['name'], array_filter($localHolidays, fn (array $holiday) => $holiday['type'] === 'estadual'))));
+        $questions = [
+            ["Quais são os feriados de {$monthName} de {$yearNumber}?", $national === []
+                ? "{$monthTitle} de {$yearNumber} não tem feriado nacional." . (count($holidays) > 0 ? ' Há ponto facultativo: ' . $joinList(array_map($describe, $holidays)) . '.' : '')
+                : (count($national) === 1 ? 'O feriado nacional de ' : 'Os feriados nacionais de ') . "{$monthName} de {$yearNumber} " . (count($national) === 1 ? 'é ' : 'são ') . $joinList(array_map($describe, $national)) . '.'],
+            ["{$monthTitle} de {$yearNumber} tem feriadão?", $longWeekends === []
+                ? "Não. Nenhum feriado nacional de {$monthName} de {$yearNumber} cai numa segunda, terça, quinta ou sexta-feira."
+                : 'Sim. ' . implode(' ', array_map(fn (array $holiday) => implode(' / ', $holiday['names']) . ' cai numa ' . $holiday['weekday'] . ', ' . (new \DateTimeImmutable($holiday['date']))->format('d/m') . ': ' . $holiday['bridge'] . '.', $longWeekends))],
+            ["Quantos dias úteis tem {$monthName} de {$yearNumber}?", "{$monthTitle} de {$yearNumber} tem {$workdays} dias úteis, contando de segunda a sexta e tirando os feriados nacionais. Feriados estaduais e municipais diminuem esse número na sua cidade."],
+            ["Tem feriado estadual em {$monthName} de {$yearNumber}?", $statesWithHoliday === []
+                ? "Nenhum estado tem feriado estadual próprio em {$monthName}, mas algumas capitais podem ter feriado municipal; veja a lista nesta página."
+                : 'Sim, em ' . count($statesWithHoliday) . (count($statesWithHoliday) === 1 ? ' estado: ' : ' estados: ') . $joinList($statesWithHoliday) . '.'],
+        ];
+
+        http_response_code(200);
+        header('Cache-Control: public, max-age=0, s-maxage=600');
+        echo View::render('site/holidays-month', [
+            'ogImage' => share_banner('feriados'),
+            'pageTitle' => "Feriados de {$monthTitle} de {$yearNumber}: Datas, Feriadões e Dias Úteis | Vibe2000",
+            'metaDescription' => $questions[0][1] . ' ' . $questions[2][1],
+            'canonicalPath' => $path,
+            'structuredData' => StructuredData::holidayMonth($yearNumber, $monthName, $path, $questions),
+            'pageKey' => 'feriados',
+            'categories' => Content::categories(),
+            'searchTerm' => '',
+            'activeCategory' => null,
+            'year' => $yearNumber,
+            'month' => $month,
+            'monthTitle' => $monthTitle,
+            'holidays' => $holidays,
+            'localHolidays' => $localHolidays,
+            'workdays' => $workdays,
+            'nationalCount' => count($national),
+            'longWeekendCount' => count($longWeekends),
+            'questions' => $questions,
             'reviewed' => Holidays::reviewed(),
         ]);
     }

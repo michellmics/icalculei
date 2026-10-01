@@ -98,18 +98,39 @@ class StructuredData
 
         $questions = self::questionsFromHtml($tool['explainer'] ?? '');
         if ($questions !== []) {
-            $items[] = [
-                '@context' => 'https://schema.org',
-                '@type' => 'FAQPage',
-                'mainEntity' => array_map(fn (array $pair) => [
-                    '@type' => 'Question',
-                    'name' => $pair[0],
-                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => $pair[1]],
-                ], $questions),
-            ];
+            $items[] = self::faq($questions);
         }
 
         return $items;
+    }
+
+    /**
+     * Feriados de um mês (/feriados/2026/novembro): trilha de navegação e perguntas frequentes.
+     * $questions: lista de [pergunta, resposta] em texto simples.
+     */
+    public static function holidayMonth(int $year, string $monthName, string $path, array $questions): array
+    {
+        return [
+            self::breadcrumb([
+                ['Início', '/'],
+                ['Feriados ' . $year, '/feriados/' . $year],
+                ['Feriados de ' . $monthName . ' de ' . $year, $path],
+            ]),
+            self::faq($questions),
+        ];
+    }
+
+    private static function faq(array $questions): array
+    {
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => array_map(fn (array $pair) => [
+                '@type' => 'Question',
+                'name' => $pair[0],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $pair[1]],
+            ], $questions),
+        ];
     }
 
     /**

@@ -30,7 +30,8 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <title><?= e($pageTitle) ?></title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <meta name="description" content="<?= e($metaDescription) ?>">
-  <meta name="robots" content="<?= e($robotsMeta ?? 'index, follow') ?>">
+  <?php // max-image-preview:large libera a imagem grande no Google Discover e na busca ?>
+  <meta name="robots" content="<?= e($robotsMeta ?? 'index, follow, max-image-preview:large') ?>">
   <link rel="canonical" href="<?= e(url($canonicalPath)) ?>">
   <meta property="og:type" content="<?= e($ogType ?? 'website') ?>">
   <meta property="og:site_name" content="Vibe2000">

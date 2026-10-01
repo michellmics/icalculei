@@ -94,7 +94,7 @@ $ofState = $state ? ['no' => 'do', 'na' => 'da', 'em' => 'de'][$state['in']] . '
             $offset = (int) $firstDay->format('w');
             ?>
             <div class="holiday-month">
-              <h3><?= $monthNames[$month] ?> <small><?= $workdays[$month] ?> dias úteis</small></h3>
+              <h3><a href="/feriados/<?= $year ?>/<?= \App\Services\Holidays::MONTH_SLUGS[$month] ?>"><?= $monthNames[$month] ?></a> <small><?= $workdays[$month] ?> dias úteis</small></h3>
               <div class="holiday-grid">
                 <?php foreach (['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as $weekdayLetter): ?><span class="holiday-weekday"><?= $weekdayLetter ?></span><?php endforeach; ?>
                 <?php for ($blank = 0; $blank < $offset; $blank++): ?><span></span><?php endfor; ?>

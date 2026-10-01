@@ -15,6 +15,9 @@ class Holidays
     public const MIN_YEAR = 2000;
     public const MAX_YEAR = 2100;
     private const WEEKDAYS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+    // Endereço das páginas de cada mês: /feriados/2026/novembro
+    public const MONTH_SLUGS = [1 => 'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    public const MONTH_NAMES = [1 => 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
     private static ?array $data = null;
 
@@ -116,6 +119,33 @@ class Holidays
 
             return $entry;
         }, array_values($entries));
+    }
+
+    /**
+     * Feriados estaduais e das capitais de todos os estados num mês (para as páginas de cada mês).
+     * Datas que já são feriado nacional ficam de fora. Cada item: date, weekday, name, place, stateCode, type.
+     */
+    public static function localForMonth(int $year, int $month): array
+    {
+        $nationalDates = array_column(array_filter(self::forYear($year), fn (array $holiday) => $holiday['type'] === 'nacional'), 'date');
+        $entries = [];
+        foreach (self::states() as $stateCode => $state) {
+            $places = [['estadual', $state['state'], $state['name']], ['municipal', $state['city'], $state['capital'] . ' (' . strtoupper($stateCode) . ')']];
+            foreach ($places as [$type, $list, $place]) {
+                foreach ($list as [$date, $name]) {
+                    $resolved = self::resolveDate($year, $date);
+                    $isoDate = $resolved->format('Y-m-d');
+                    if ((int) $resolved->format('n') !== $month || in_array($isoDate, $nationalDates, true)) {
+                        continue;
+                    }
+                    $entries[] = ['date' => $isoDate, 'weekday' => self::WEEKDAYS[(int) $resolved->format('w')], 'name' => $name,
+                        'place' => $place, 'stateCode' => $stateCode, 'type' => $type];
+                }
+            }
+        }
+        usort($entries, fn (array $first, array $second) => [$first['date'], $first['place']] <=> [$second['date'], $second['place']]);
+
+        return $entries;
     }
 
     /**

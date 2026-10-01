@@ -163,6 +163,7 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: bal
 .field input[type="range"] { padding: 0; accent-color: var(--accent); }
 .field-hint { font-size: 13px; color: var(--muted); }
 .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.weighted-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .check { display: flex; gap: 8px; align-items: center; font-size: 15px; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
 .segmented { display: flex; flex-wrap: wrap; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 4px; }
@@ -810,6 +811,9 @@ html.install-open { overflow: hidden; }
 .holiday-month h3 { font-size: 15px; margin: 0 0 6px; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
 .holiday-month h3 small { font-weight: 400; color: var(--muted); font-size: 11px; }
 .holiday-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; font-family: var(--font-number); font-size: 12px; }
+.holiday-month-single { max-width: 340px; margin-top: 18px; }
+.holiday-month h3 a { color: inherit; }
+.link-list-plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
 .holiday-weekday { color: var(--muted); font-weight: 600; padding: 2px 0; }
 .holiday-day { padding: 4px 0; border-radius: 5px; }
 .holiday-day.is-weekend { color: var(--muted); background: var(--paper); }

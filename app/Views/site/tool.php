@@ -18,7 +18,8 @@ use App\Services\Ads;
     <a href="/">Início</a> › <a href="/?categoria=<?= e($tool['category']) ?>"><?= e($categories[$tool['category']]) ?></a> › <span><?= e($tool['name']) ?></span>
   </nav>
   <h1 class="tool-title"><?= e($tool['name'] === 'IMC' ? 'Calculadora de IMC' : $tool['name']) ?></h1>
-  <p class="tool-lead"><?= e($tool['lead']) ?></p>
+  <?php // Resposta direta (até ~60 palavras) logo abaixo do título: é o trecho que o Google costuma usar em destaque. Sem ela, mostra o lead. ?>
+  <p class="tool-lead"><?= e($tool['answer'] ?? $tool['lead']) ?></p>
   <span class="reviewed"><?= $tool['reviewed'] !== '' ? '✓ revisada em ' . e(format_date($tool['reviewed'])) : 'em preparação' ?></span>
 
   <div class="two-columns">

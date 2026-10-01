@@ -47,6 +47,27 @@
     date.setDate(date.getDate() + offsetDays);
     return date.toISOString().slice(0, 10);
   }
+  // Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher)
+  function easterSunday(year) {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day, 12);
+  }
+  // Feriados nacionais do ano (datas "aaaa-mm-dd"), usados em dias úteis e hora extra
+  function holidaysOfYear(year, includeCarnival) {
+    const fixedHolidays = ["01-01", "04-21", "05-01", "09-07", "10-12", "11-02", "11-15", "11-20", "12-25"];
+    const holidays = new Set(fixedHolidays.map((monthDay) => `${year}-${monthDay}`));
+    const easter = easterSunday(year);
+    const offsetDate = (days) => new Date(easter.getTime() + days * MILLISECONDS_PER_DAY).toISOString().slice(0, 10);
+    holidays.add(offsetDate(-2)); // Sexta-feira Santa
+    if (includeCarnival) {
+      holidays.add(offsetDate(-48));
+      holidays.add(offsetDate(-47));
+    }
+    return holidays;
+  }
   const WEEKDAYS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
   const MILLISECONDS_PER_DAY = 86400000;
 
@@ -162,11 +183,10 @@
       ],
       dependentDeduction: 189.59,
       simplifiedDiscount: 607.20,
-      // Redução mensal: zera o imposto de quem recebe até R$ 5.000 (limite de R$ 312,89)
+      // Redução mensal: zera o imposto de quem recebe até R$ 5.000
       // e diminui aos poucos entre R$ 5.000,01 e R$ 7.350 (R$ 978,62 − 0,133145 × rendimentos)
       reduction: {
         fullUpTo: 5000.00,
-        fullAmount: 312.89,
         partialUpTo: 7350.00,
         partialBase: 978.62,
         partialFactor: 0.133145,
@@ -220,7 +240,8 @@
 
     let reduction = 0;
     if (taxableIncome <= table.reduction.fullUpTo) {
-      reduction = table.reduction.fullAmount;
+      // Até R$ 5.000 o imposto é zero (inclusive no 13º, que não usa o desconto simplificado)
+      reduction = taxBeforeReduction;
     } else if (taxableIncome <= table.reduction.partialUpTo) {
       reduction = table.reduction.partialBase - table.reduction.partialFactor * taxableIncome;
     }
@@ -1281,14 +1302,32 @@
             <div class="field"><label for="thirteenth-dependents">Dependentes (IR)</label><input id="thirteenth-dependents" type="number" min="0" max="20" value="0"></div>
           </div>
           <span class="field-hint">Conta como mês trabalhado aquele em que você trabalhou 15 dias ou mais.</span>
+          <div class="field-row">
+            <div class="field"><label for="thirteenth-variables">Média de horas extras, adicionais e comissões (R$/mês)</label><input id="thirteenth-variables" inputmode="numeric" data-money value="0"><span class="field-hint">média mensal do que você recebe além do salário (opcional)</span></div>
+            <div class="field"><label for="thirteenth-advance">1ª parcela já recebida (R$)</label><input id="thirteenth-advance" inputmode="numeric" data-money value="0"><span class="field-hint">se já recebeu, ex.: adiantamento nas férias (opcional)</span></div>
+          </div>
         </div>
         <div id="thirteenth-result"></div>
         <div class="calculator-body" id="thirteenth-table"></div>`,
       setup() {
+        // Prazo legal; se cair no fim de semana, o pagamento é antecipado para a sexta-feira anterior
+        function deadline(year, month, day) {
+          const date = new Date(year, month - 1, day, 12);
+          while (date.getDay() === 0 || date.getDay() === 6) {
+            date.setDate(date.getDate() - 1);
+          }
+          return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+        }
+        const year = new Date().getFullYear();
+        const firstDeadline = deadline(year, 11, 30);
+        const secondDeadline = deadline(year, 12, 20);
+
         function calculate() {
           const salary = parseNumber(document.getElementById("thirteenth-salary").value);
           const months = Math.min(12, Math.max(0, parseInt(document.getElementById("thirteenth-months").value, 10) || 0));
           const dependents = Math.max(0, parseInt(document.getElementById("thirteenth-dependents").value, 10) || 0);
+          const variables = parseNumber(document.getElementById("thirteenth-variables").value) || 0;
+          const advanceReceived = parseNumber(document.getElementById("thirteenth-advance").value) || 0;
           const resultBox = document.getElementById("thirteenth-result");
           const tableBox = document.getElementById("thirteenth-table");
           if (!(salary > 0) || months === 0) {
@@ -1296,25 +1335,38 @@
             tableBox.innerHTML = "";
             return;
           }
-          const grossThirteenth = roundCents((salary / 12) * months);
-          const firstInstallment = roundCents(grossThirteenth / 2);
+          // Base do 13º: salário + média das verbas variáveis habituais (horas extras, adicionais, comissões)
+          const base = salary + variables;
+          const grossThirteenth = roundCents((base / 12) * months);
+          const firstInstallment = advanceReceived > 0 ? advanceReceived : roundCents(grossThirteenth / 2);
           // INSS e IR do 13º são calculados separados do salário, sobre o valor total, e descontados na 2ª parcela
           const inss = calculateInss(grossThirteenth);
           const incomeTax = calculateIncomeTax({ taxableIncome: grossThirteenth, inss, dependents, isThirteenth: true });
           const secondInstallment = roundCents(grossThirteenth - firstInstallment - inss - incomeTax.tax);
-          resultBox.innerHTML = display("13º salário líquido", formatMoney(firstInstallment + secondInstallment), `bruto de ${formatMoney(grossThirteenth)} (${months}/12 avos)`, [
-            ["1ª parcela (até 30/nov)", formatMoney(firstInstallment)],
-            ["2ª parcela (até 20/dez)", formatMoney(secondInstallment)],
+          const detail = `bruto de ${formatMoney(grossThirteenth)} (${months}/12 avos${variables > 0 ? ", com as médias" : ""})`;
+          resultBox.innerHTML = display("13º salário líquido", formatMoney(firstInstallment + secondInstallment), detail, [
+            [advanceReceived > 0 ? "1ª parcela (já recebida)" : `1ª parcela (até ${firstDeadline})`, formatMoney(firstInstallment)],
+            [`2ª parcela (até ${secondDeadline})`, formatMoney(secondInstallment)],
             ["INSS", formatMoney(inss)],
             ["Imposto de Renda", formatMoney(incomeTax.tax)],
-          ]);
-          tableBox.innerHTML = payslipTable([
-            { label: `13º salário bruto (${months}/12)`, value: grossThirteenth },
+          ], secondInstallment < 0 ? `<span class="display-detail">⚠ A 1ª parcela informada é maior que o 13º líquido: confira o valor.</span>` : "");
+          const rows = [{ label: `Salário: ${formatMoney(salary)} ÷ 12 × ${months}`, value: roundCents(salary / 12 * months) }];
+          if (variables > 0) {
+            rows.push({ label: `Médias de variáveis: ${formatMoney(variables)} ÷ 12 × ${months}`, value: roundCents(variables / 12 * months) });
+          }
+          rows.push(
             { label: "INSS sobre o 13º", value: inss, isDiscount: true },
-            { label: "IR sobre o 13º (tributação exclusiva, já com a redução de 2026)", value: incomeTax.tax, isDiscount: true },
-          ]) + `<p class="notice">${LABOR_NOTICE}</p>`;
+            { label: `IR sobre o 13º (alíquota ${formatPercent(incomeTax.rate)}, tributação exclusiva)`, value: incomeTax.taxBeforeReduction, isDiscount: true },
+          );
+          if (incomeTax.reduction > 0) {
+            rows.push({ label: "Redução da Lei 15.270/2025 (devolvida)", value: incomeTax.reduction });
+          }
+          rows.push({ label: advanceReceived > 0 ? "1ª parcela já recebida" : "1ª parcela (metade do 13º, sem descontos)", value: firstInstallment, isDiscount: true });
+          tableBox.innerHTML = payslipTable(rows)
+            + `<p><b>2ª parcela a receber:</b> ${formatMoney(secondInstallment)}</p>`
+            + `<p class="notice">${LABOR_NOTICE} Em ${year}, a 1ª parcela vence em ${firstDeadline} e a 2ª em ${secondDeadline} (prazo legal de 20/12 antecipado quando cai no fim de semana).</p>`;
         }
-        onInputs(["thirteenth-salary", "thirteenth-months", "thirteenth-dependents"], calculate);
+        onInputs(["thirteenth-salary", "thirteenth-months", "thirteenth-dependents", "thirteenth-variables", "thirteenth-advance"], calculate);
       },
     },
 
@@ -1602,29 +1654,110 @@
           <div class="field-row">
             <div class="field"><label for="overtime-salary">Salário bruto (R$)</label><input id="overtime-salary" inputmode="numeric" data-money value="3.000,00"></div>
             <div class="field"><label for="overtime-journey">Jornada mensal (horas)</label><input id="overtime-journey" inputmode="numeric" value="220"></div>
-            <div class="field"><label for="overtime-hours">Horas extras</label><input id="overtime-hours" inputmode="decimal" value="10"></div>
-            <div class="field"><label for="overtime-rate">Adicional</label><select id="overtime-rate"><option value="50">50%</option><option value="60">60%</option><option value="100">100%</option></select></div>
+            <div class="field"><label for="overtime-dependents">Dependentes (IR)</label><input id="overtime-dependents" type="number" min="0" max="20" value="0"></div>
           </div>
-          <span class="field-hint">220 horas é a jornada de quem trabalha 44 horas por semana.</span>
+          <span class="field-hint">Jornada: 220 horas = 44 por semana; 200 horas = 40 por semana; 180 horas = 36 por semana.</span>
+          <div class="field-row">
+            <div class="field"><label for="overtime-hours">Horas extras em dias úteis</label><input id="overtime-hours" inputmode="decimal" value="10"></div>
+            <div class="field"><label for="overtime-rate">Adicional</label><select id="overtime-rate"><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="75">75%</option><option value="100">100%</option></select></div>
+            <div class="field"><label for="overtime-hours-100">Horas em domingos e feriados (100%)</label><input id="overtime-hours-100" inputmode="decimal" value="0"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="overtime-workdays">Dias úteis no mês</label><input id="overtime-workdays" type="number" min="1" max="31" value="25"></div>
+            <div class="field"><label for="overtime-restdays">Domingos e feriados no mês</label><input id="overtime-restdays" type="number" min="0" max="31" value="5"></div>
+          </div>
+          <span class="field-hint" id="overtime-month-hint">Dias úteis = segunda a sábado, sem feriados. Usados no cálculo do DSR.</span>
         </div>
-        <div id="overtime-result"></div>`,
+        <div id="overtime-result"></div>
+        <div class="calculator-body" id="overtime-table"></div>`,
       setup() {
+        // Preenche os dias do mês atual: úteis (segunda a sábado) e domingos + feriados nacionais
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const holidays = holidaysOfYear(year, false);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let workdays = 0;
+        let restDays = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day, 12);
+          const isoDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          if (date.getDay() === 0 || holidays.has(isoDate)) {
+            restDays++;
+          } else {
+            workdays++;
+          }
+        }
+        document.getElementById("overtime-workdays").value = workdays;
+        document.getElementById("overtime-restdays").value = restDays;
+        const monthName = today.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+        document.getElementById("overtime-month-hint").textContent = `Preenchido para ${monthName} com os feriados nacionais (some os feriados do seu estado ou cidade). Dias úteis = segunda a sábado. Usados no cálculo do DSR.`;
+
+        // Salário líquido do mês (INSS e IR sobre tudo o que é tributável)
+        function netPay(grossPay, dependents) {
+          const inss = calculateInss(grossPay);
+          const incomeTax = calculateIncomeTax({ taxableIncome: grossPay, inss, dependents });
+          return { inss, incomeTax, net: grossPay - inss - incomeTax.tax };
+        }
+
         function calculate() {
-          const [salary, journey, hours] = ["overtime-salary", "overtime-journey", "overtime-hours"].map((id) => parseNumber(document.getElementById(id).value));
+          const [salary, journey, hours, hoursAt100] = ["overtime-salary", "overtime-journey", "overtime-hours", "overtime-hours-100"].map((id) => parseNumber(document.getElementById(id).value) || 0);
           const additionalPercent = Number(document.getElementById("overtime-rate").value);
+          const workdaysInMonth = parseInt(document.getElementById("overtime-workdays").value, 10) || 0;
+          const restDaysInMonth = parseInt(document.getElementById("overtime-restdays").value, 10) || 0;
+          const dependents = Math.max(0, parseInt(document.getElementById("overtime-dependents").value, 10) || 0);
           const resultBox = document.getElementById("overtime-result");
-          if ([salary, journey, hours].some(Number.isNaN) || journey <= 0) {
-            resultBox.innerHTML = emptyDisplay("Total de horas extras", "Preencha todos os campos.");
+          const tableBox = document.getElementById("overtime-table");
+          if (!(salary > 0) || !(journey > 0) || workdaysInMonth <= 0) {
+            resultBox.innerHTML = emptyDisplay("Total de horas extras com DSR", "Preencha salário, jornada e dias úteis.");
+            tableBox.innerHTML = "";
             return;
           }
+
           const hourValue = salary / journey;
-          const overtimeValue = hourValue * (1 + additionalPercent / 100);
-          resultBox.innerHTML = display("Total de horas extras", formatMoney(overtimeValue * hours), `${formatNumber(hours)} horas com ${additionalPercent}% de adicional`, [
+          const overtimeHourValue = hourValue * (1 + additionalPercent / 100);
+          const overtimeAmount = roundCents(overtimeHourValue * hours);
+          const overtimeAt100Amount = roundCents(hourValue * 2 * hoursAt100);
+          const overtimeTotal = overtimeAmount + overtimeAt100Amount;
+          // DSR sobre horas extras (Lei 605/1949 e Súmula 172 do TST): média por dia útil × domingos e feriados
+          const restPayOnOvertime = roundCents(overtimeTotal / workdaysInMonth * restDaysInMonth);
+          const overtimeWithRest = overtimeTotal + restPayOnOvertime;
+
+          const grossPay = salary + overtimeWithRest;
+          const withOvertime = netPay(grossPay, dependents);
+          const withoutOvertime = netPay(salary, dependents);
+          const netGain = withOvertime.net - withoutOvertime.net;
+
+          resultBox.innerHTML = display("Total de horas extras com DSR", formatMoney(overtimeWithRest), `sobram ${formatMoney(netGain)} a mais no salário líquido, depois de INSS e IR`, [
             ["Hora normal", formatMoney(hourValue)],
-            ["Hora extra", formatMoney(overtimeValue)],
+            [`Hora extra ${additionalPercent}%`, formatMoney(overtimeHourValue)],
+            ["DSR sobre as extras", formatMoney(restPayOnOvertime)],
+            ["Salário líquido do mês", formatMoney(withOvertime.net)],
           ]);
+
+          const rows = [{ label: "Salário base", value: salary }];
+          if (overtimeAmount > 0) {
+            rows.push({ label: `Horas extras ${additionalPercent}% (${formatNumber(hours)} h × ${formatMoney(overtimeHourValue)})`, value: overtimeAmount });
+          }
+          if (overtimeAt100Amount > 0) {
+            rows.push({ label: `Horas extras 100% (${formatNumber(hoursAt100)} h × ${formatMoney(hourValue * 2)})`, value: overtimeAt100Amount });
+          }
+          if (restPayOnOvertime > 0) {
+            rows.push({ label: `DSR sobre horas extras (${workdaysInMonth} dias úteis, ${restDaysInMonth} domingos e feriados)`, value: restPayOnOvertime });
+          }
+          rows.push(
+            { label: "INSS", value: withOvertime.inss, isDiscount: true },
+            { label: `IR calculado na tabela (alíquota ${formatPercent(withOvertime.incomeTax.rate)})`, value: withOvertime.incomeTax.taxBeforeReduction, isDiscount: true },
+          );
+          if (withOvertime.incomeTax.reduction > 0) {
+            rows.push({ label: "Redução da Lei 15.270/2025 (devolvida)", value: withOvertime.incomeTax.reduction });
+          }
+          const fgtsOnOvertime = roundCents(overtimeWithRest * TAX_TABLES.fgtsMonthlyRate);
+          const summaryHtml = `<p><b>Salário bruto do mês:</b> ${formatMoney(grossPay)} · <b>Líquido:</b> ${formatMoney(withOvertime.net)} · <b>Sem as horas extras seria:</b> ${formatMoney(withoutOvertime.net)}</p>`
+            + `<p>A empresa também deposita ${formatMoney(fgtsOnOvertime)} de FGTS (8%) sobre as horas extras e o DSR; não é desconto.</p>`;
+          tableBox.innerHTML = payslipTable(rows) + summaryHtml + `<p class="notice">${LABOR_NOTICE} Horas extras habituais também refletem em férias, 13º e aviso prévio.</p>`;
         }
-        onInputs(["overtime-salary", "overtime-journey", "overtime-hours", "overtime-rate"], calculate);
+        onInputs(["overtime-salary", "overtime-journey", "overtime-dependents", "overtime-hours", "overtime-rate", "overtime-hours-100", "overtime-workdays", "overtime-restdays"], calculate);
       },
     },
 
@@ -2118,26 +2251,6 @@
         document.getElementById("business-start").value = todayIso();
         document.getElementById("business-end").value = todayIso(60);
 
-        // Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher)
-        function easterSunday(year) {
-          const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
-          const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
-          const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
-          const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
-          return new Date(year, month - 1, day, 12);
-        }
-        function holidaysOfYear(year, includeCarnival) {
-          const fixedHolidays = ["01-01", "04-21", "05-01", "09-07", "10-12", "11-02", "11-15", "11-20", "12-25"];
-          const holidays = new Set(fixedHolidays.map((monthDay) => `${year}-${monthDay}`));
-          const easter = easterSunday(year);
-          const offsetDate = (days) => new Date(easter.getTime() + days * MILLISECONDS_PER_DAY).toISOString().slice(0, 10);
-          holidays.add(offsetDate(-2)); // Sexta-feira Santa
-          if (includeCarnival) {
-            holidays.add(offsetDate(-48));
-            holidays.add(offsetDate(-47));
-          }
-          return holidays;
-        }
         function calculate() {
           let start = dateFromInput("business-start");
           let end = dateFromInput("business-end");
@@ -4947,6 +5060,582 @@ Funciona com textos de qualquer tamanho.</textarea>
         }
         document.getElementById("password-generate").addEventListener("click", generate);
         onInputs(["password-length", "password-upper", "password-lower", "password-numbers", "password-symbols"], generate);
+      },
+    },
+
+    "media-ponderada": {
+      html: `        <div class="calculator-body">
+          <div id="weighted-rows" class="weighted-rows"></div>
+          <div class="button-row">
+            <button type="button" class="secondary-button" id="weighted-add">+ adicionar nota</button>
+            <button type="button" class="secondary-button" id="weighted-remove">− remover a última</button>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="weighted-target">Média para passar (opcional)</label><input id="weighted-target" inputmode="decimal" value="7"></div>
+            <div class="field"><label for="weighted-next-weight">Peso da prova que falta (opcional)</label><input id="weighted-next-weight" inputmode="decimal" value=""></div>
+          </div>
+          <span class="field-hint">Preencha o peso da prova que ainda vai fazer para saber a nota mínima que precisa tirar.</span>
+        </div>
+        <div id="weighted-result"></div>`,
+      setup() {
+        const MIN_ROWS = 2;
+        const MAX_ROWS = 20;
+        const EXAMPLE = [["7,5", "2"], ["6", "3"], ["8", "5"]];
+        const rowsBox = document.getElementById("weighted-rows");
+
+        function addRow(value = "", weight = "1") {
+          const number = rowsBox.children.length + 1;
+          rowsBox.insertAdjacentHTML("beforeend", `<div class="field-row">
+            <div class="field"><label for="weighted-value-${number}">Nota ou valor ${number}</label><input id="weighted-value-${number}" inputmode="decimal" value="${value}"></div>
+            <div class="field"><label for="weighted-weight-${number}">Peso ${number}</label><input id="weighted-weight-${number}" inputmode="decimal" value="${weight}"></div>
+          </div>`);
+        }
+
+        // Link compartilhado com mais linhas que o exemplo: cria as linhas antes de preencher
+        let sharedRows = 0;
+        new URLSearchParams(location.search).forEach((value, key) => {
+          const match = key.match(/^weighted-(?:value|weight)-(\d+)$/);
+          if (match) {
+            sharedRows = Math.max(sharedRows, Number(match[1]));
+          }
+        });
+        EXAMPLE.forEach(([value, weight]) => addRow(value, weight));
+        while (rowsBox.children.length < Math.min(sharedRows, MAX_ROWS)) {
+          addRow();
+        }
+
+        function calculate() {
+          const resultBox = document.getElementById("weighted-result");
+          let weightedSum = 0;
+          let weightSum = 0;
+          let simpleSum = 0;
+          let count = 0;
+          for (let number = 1; number <= rowsBox.children.length; number++) {
+            const value = parseNumber(document.getElementById(`weighted-value-${number}`).value);
+            const weight = parseNumber(document.getElementById(`weighted-weight-${number}`).value);
+            if (Number.isNaN(value) || Number.isNaN(weight) || weight < 0) {
+              continue;
+            }
+            weightedSum += value * weight;
+            weightSum += weight;
+            simpleSum += value;
+            count++;
+          }
+          if (weightSum <= 0) {
+            resultBox.innerHTML = emptyDisplay("Média ponderada", "Preencha pelo menos uma nota com peso maior que zero.");
+            return;
+          }
+
+          const average = weightedSum / weightSum;
+          const target = parseNumber(document.getElementById("weighted-target").value);
+          const nextWeight = parseNumber(document.getElementById("weighted-next-weight").value);
+          const gridItems = [
+            ["Média simples", formatNumber(simpleSum / count, 2)],
+            ["Soma dos pesos", formatNumber(weightSum, 2)],
+            ["Soma de nota × peso", formatNumber(weightedSum, 2)],
+          ];
+          let detail = `${count} ${count === 1 ? "nota" : "notas"}`;
+          if (!Number.isNaN(target)) {
+            detail += average >= target ? ` · acima da média ${formatNumber(target, 2)} ✔` : ` · abaixo da média ${formatNumber(target, 2)}`;
+          }
+          if (!Number.isNaN(target) && nextWeight > 0) {
+            // (soma atual + nota × peso novo) ÷ (pesos + peso novo) = média desejada
+            const neededGrade = (target * (weightSum + nextWeight) - weightedSum) / nextWeight;
+            gridItems.unshift(["Nota mínima na próxima prova", neededGrade <= 0 ? "já passou" : formatNumber(neededGrade, 2)]);
+          }
+          resultBox.innerHTML = display("Média ponderada", formatNumber(average, 2), detail, gridItems);
+        }
+
+        document.getElementById("weighted-add").addEventListener("click", () => {
+          if (rowsBox.children.length < MAX_ROWS) {
+            addRow();
+            calculate();
+          }
+        });
+        document.getElementById("weighted-remove").addEventListener("click", () => {
+          if (rowsBox.children.length > MIN_ROWS) {
+            rowsBox.lastElementChild.remove();
+            calculate();
+          }
+        });
+        rowsBox.addEventListener("input", calculate);
+        onInputs(["weighted-target", "weighted-next-weight"], calculate);
+      },
+    },
+
+    "dias-ate-data": {
+      html: `        <div class="calculator-body">
+          <div class="button-row" id="countdown-presets">
+            <button type="button" class="secondary-button" data-preset="natal">Natal</button>
+            <button type="button" class="secondary-button" data-preset="ano-novo">Ano-novo</button>
+            <button type="button" class="secondary-button" data-preset="carnaval">Carnaval</button>
+            <button type="button" class="secondary-button" data-preset="maes">Dia das Mães</button>
+            <button type="button" class="secondary-button" data-preset="pais">Dia dos Pais</button>
+            <button type="button" class="secondary-button" data-preset="black-friday">Black Friday</button>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="countdown-date">Data</label><input id="countdown-date" type="date"></div>
+            <div class="field"><label for="countdown-name">Nome do evento (opcional)</label><input id="countdown-name" maxlength="40" placeholder="ex.: minhas férias"></div>
+          </div>
+        </div>
+        <div id="countdown-result"></div>`,
+      setup() {
+        const dateInput = document.getElementById("countdown-date");
+        const nameInput = document.getElementById("countdown-name");
+        const resultBox = document.getElementById("countdown-result");
+        let liveTimer = null;
+
+        const toIso = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        // N-ésimo dia da semana do mês (ex.: 2º domingo de maio)
+        function nthWeekday(year, month, weekday, nth) {
+          const first = new Date(year, month, 1, 12);
+          const offset = (weekday - first.getDay() + 7) % 7;
+          return new Date(year, month, 1 + offset + (nth - 1) * 7, 12);
+        }
+        const PRESETS = {
+          natal: { name: "o Natal", dateOf: (year) => new Date(year, 11, 25, 12) },
+          "ano-novo": { name: "o Ano-novo", dateOf: (year) => new Date(year, 0, 1, 12) },
+          // Sábado de Carnaval (50 dias antes da Páscoa)
+          carnaval: { name: "o Carnaval", dateOf: (year) => new Date(easterSunday(year).getTime() - 50 * MILLISECONDS_PER_DAY) },
+          maes: { name: "o Dia das Mães", dateOf: (year) => nthWeekday(year, 4, 0, 2) },
+          pais: { name: "o Dia dos Pais", dateOf: (year) => nthWeekday(year, 7, 0, 2) },
+          // Sexta-feira depois da 4ª quinta-feira de novembro (Ação de Graças nos EUA)
+          "black-friday": { name: "a Black Friday", dateOf: (year) => new Date(nthWeekday(year, 10, 4, 4).getTime() + MILLISECONDS_PER_DAY) },
+        };
+        // Próxima ocorrência a partir de hoje
+        function nextOccurrence(preset) {
+          const today = toIso(new Date());
+          const year = new Date().getFullYear();
+          const thisYear = toIso(preset.dateOf(year));
+          return thisYear >= today ? thisYear : toIso(preset.dateOf(year + 1));
+        }
+
+        // Meses completos + dias restantes entre duas datas
+        function monthsAndDays(start, end) {
+          let months = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth();
+          if (end.getDate() < start.getDate()) {
+            months--;
+          }
+          const afterMonths = new Date(start.getFullYear(), start.getMonth() + months, 1, 12);
+          const lastDay = new Date(afterMonths.getFullYear(), afterMonths.getMonth() + 1, 0).getDate();
+          afterMonths.setDate(Math.min(start.getDate(), lastDay));
+          return { months, days: Math.round((end - afterMonths) / MILLISECONDS_PER_DAY) };
+        }
+
+        // De amanhã até a data: dias úteis (segunda a sexta, sem feriados nacionais) e fins de semana (sábados)
+        function countDaysUntil(start, end) {
+          const holidaysByYear = new Map();
+          let businessDays = 0;
+          let weekends = 0;
+          for (let date = new Date(start.getTime() + MILLISECONDS_PER_DAY); date <= end; date = new Date(date.getTime() + MILLISECONDS_PER_DAY)) {
+            const year = date.getFullYear();
+            if (!holidaysByYear.has(year)) {
+              holidaysByYear.set(year, holidaysOfYear(year, false));
+            }
+            const weekday = date.getDay();
+            if (weekday === 6) {
+              weekends++;
+            } else if (weekday !== 0 && !holidaysByYear.get(year).has(toIso(date))) {
+              businessDays++;
+            }
+          }
+          return { businessDays, weekends };
+        }
+
+        function plural(amount, singular, pluralWord) {
+          return `${formatNumber(amount, 0)} ${amount === 1 ? singular : pluralWord}`;
+        }
+
+        function updateLiveCountdown(target) {
+          const liveBox = document.getElementById("countdown-live");
+          if (!liveBox) {
+            return;
+          }
+          const remaining = Math.max(0, target - Date.now());
+          const totalSeconds = Math.floor(remaining / 1000);
+          const days = Math.floor(totalSeconds / 86400);
+          const clock = [Math.floor(totalSeconds / 3600) % 24, Math.floor(totalSeconds / 60) % 60, totalSeconds % 60].map((part) => String(part).padStart(2, "0")).join(":");
+          liveBox.textContent = `${plural(days, "dia", "dias")} e ${clock}`;
+        }
+
+        function calculate() {
+          clearInterval(liveTimer);
+          const target = dateFromInput("countdown-date");
+          if (!target) {
+            resultBox.innerHTML = emptyDisplay("Dias até a data", "Escolha uma data.");
+            return;
+          }
+          const today = new Date(`${toIso(new Date())}T12:00:00`);
+          const eventName = nameInput.value.trim();
+          const dayDifference = Math.round((target - today) / MILLISECONDS_PER_DAY);
+          const weekdayText = `${WEEKDAYS[target.getDay()]}, ${formatDate(dateInput.value)}`;
+          const label = eventName ? `Dias até ${escapeHtml(eventName)}` : "Dias até a data";
+
+          if (dayDifference === 0) {
+            resultBox.innerHTML = display(label, "É hoje!", weekdayText);
+            return;
+          }
+          if (dayDifference < 0) {
+            resultBox.innerHTML = display(eventName ? `Desde ${escapeHtml(eventName)}` : "Essa data já passou", plural(-dayDifference, "dia", "dias"), `${weekdayText} foi há ${plural(-dayDifference, "dia", "dias")}`);
+            return;
+          }
+
+          const split = monthsAndDays(today, target);
+          const weeks = Math.floor(dayDifference / 7);
+          const counts = countDaysUntil(today, target);
+          resultBox.innerHTML = display(label, plural(dayDifference, "dia", "dias"), weekdayText, [
+            ["Em semanas", `${plural(weeks, "semana", "semanas")}${dayDifference % 7 ? ` e ${plural(dayDifference % 7, "dia", "dias")}` : ""}`],
+            ["Em meses", `${plural(split.months, "mês", "meses")}${split.days ? ` e ${plural(split.days, "dia", "dias")}` : ""}`],
+            ["Dias úteis", formatNumber(counts.businessDays, 0)],
+            ["Fins de semana", formatNumber(counts.weekends, 0)],
+            ["Horas", formatNumber(dayDifference * 24, 0)],
+          ], `<span class="display-detail">Contagem regressiva até 0h: <b id="countdown-live"></b></span>`);
+
+          const midnightTarget = new Date(`${dateInput.value}T00:00:00`).getTime();
+          updateLiveCountdown(midnightTarget);
+          liveTimer = setInterval(() => updateLiveCountdown(midnightTarget), 1000);
+        }
+
+        document.getElementById("countdown-presets").addEventListener("click", (clickEvent) => {
+          const button = clickEvent.target.closest("[data-preset]");
+          if (!button) {
+            return;
+          }
+          const preset = PRESETS[button.dataset.preset];
+          dateInput.value = nextOccurrence(preset);
+          nameInput.value = preset.name;
+          calculate();
+        });
+        dateInput.value = nextOccurrence(PRESETS.natal);
+        nameInput.value = PRESETS.natal.name;
+        onInputs(["countdown-date", "countdown-name"], calculate);
+      },
+    },
+
+    "signo-lunar": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="moon-date">Data de nascimento</label><input id="moon-date" type="date" value="1995-06-15"></div>
+            <div class="field"><label for="moon-time">Hora (opcional)</label><input id="moon-time" type="time"></div>
+            <div class="field"><label for="moon-zone">Fuso horário</label><select id="moon-zone">
+              <option value="-3">Brasília (maioria dos estados)</option>
+              <option value="-4">Amazonas, MT, MS, RO, RR</option>
+              <option value="-5">Acre</option>
+              <option value="-2">Fernando de Noronha</option>
+              <option value="0">Londres / UTC</option>
+              <option value="1">Portugal (horário de verão) / Europa Central</option>
+            </select></div>
+          </div>
+          <span class="field-hint">Nasceu no horário de verão? Diminua 1 hora. Sem a hora, mostramos os dois signos possíveis se a Lua trocou de signo naquele dia.</span>
+        </div>
+        <div id="moon-result"></div>`,
+      setup() {
+        const SIGNS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
+        const PHASES = ["Lua nova", "Lua crescente", "Quarto crescente", "Crescente gibosa", "Lua cheia", "Minguante gibosa", "Quarto minguante", "Lua minguante"];
+        const SYNODIC_MONTH = 29.530589; // dias de uma lunação (nova a nova)
+        const LUNAR_YEAR = SYNODIC_MONTH * 12;
+        const toRadians = (degrees) => degrees * Math.PI / 180;
+        const normalizeDegrees = (degrees) => ((degrees % 360) + 360) % 360;
+
+        /* Posição aproximada do Sol e da Lua (fórmulas simplificadas do Astronomical Almanac,
+           erro de cerca de 0,5°: a Lua anda uns 13° por dia, então o signo pode errar perto da troca). */
+        function skyAt(timestamp) {
+          const days = timestamp / MILLISECONDS_PER_DAY + 2440587.5 - 2451545.0;
+          const sunAnomaly = toRadians(357.529 + 0.98560028 * days);
+          const sunLongitude = normalizeDegrees(280.460 + 0.9856474 * days + 1.915 * Math.sin(sunAnomaly) + 0.020 * Math.sin(2 * sunAnomaly));
+          const moonMeanLongitude = 218.316 + 13.176396 * days;
+          const moonAnomaly = toRadians(134.963 + 13.064993 * days);
+          const elongation = toRadians(297.850 + 12.190749 * days);
+          const latitudeArgument = toRadians(93.272 + 13.229350 * days);
+          const moonLongitude = normalizeDegrees(moonMeanLongitude
+            + 6.289 * Math.sin(moonAnomaly)
+            + 1.274 * Math.sin(2 * elongation - moonAnomaly)
+            + 0.658 * Math.sin(2 * elongation)
+            + 0.214 * Math.sin(2 * moonAnomaly)
+            - 0.186 * Math.sin(sunAnomaly)
+            - 0.114 * Math.sin(2 * latitudeArgument));
+          const moonSunAngle = normalizeDegrees(moonLongitude - sunLongitude);
+          return {
+            sunSign: Math.floor(sunLongitude / 30),
+            moonSign: Math.floor(moonLongitude / 30),
+            moonAge: moonSunAngle / 360 * SYNODIC_MONTH,
+            illumination: (1 - Math.cos(toRadians(moonSunAngle))) / 2,
+            phase: PHASES[Math.floor(moonSunAngle / 45 + 0.5) % 8],
+          };
+        }
+
+        // Momento (em UTC) de uma data e hora locais no fuso escolhido
+        function timestampOf(dateText, timeText, zoneHours) {
+          const [year, month, day] = dateText.split("-").map(Number);
+          const [hours, minutes] = timeText.split(":").map(Number);
+          return Date.UTC(year, month - 1, day, hours, minutes) - zoneHours * 3600000;
+        }
+
+        function calculate() {
+          const dateText = document.getElementById("moon-date").value;
+          const timeText = document.getElementById("moon-time").value;
+          const zoneHours = Number(document.getElementById("moon-zone").value);
+          const resultBox = document.getElementById("moon-result");
+          if (!dateText) {
+            resultBox.innerHTML = emptyDisplay("Signo lunar", "Informe a data de nascimento.");
+            return;
+          }
+
+          const hasTime = timeText !== "";
+          const birth = timestampOf(dateText, hasTime ? timeText : "12:00", zoneHours);
+          const sky = skyAt(birth);
+          let moonSignText = SIGNS[sky.moonSign];
+          let detail = hasTime ? "Lua no momento do nascimento" : "sem a hora: posição ao meio-dia";
+          if (!hasTime) {
+            // A Lua passa uns 2 dias e meio em cada signo: confere o começo e o fim do dia
+            const startSign = skyAt(timestampOf(dateText, "00:00", zoneHours)).moonSign;
+            const endSign = skyAt(timestampOf(dateText, "23:59", zoneHours)).moonSign;
+            if (startSign !== endSign) {
+              moonSignText = `${SIGNS[startSign]} ou ${SIGNS[endSign]}`;
+              detail = "a Lua trocou de signo nesse dia: informe a hora para saber qual";
+            }
+          }
+
+          const daysLived = (Date.now() - birth) / MILLISECONDS_PER_DAY;
+          const lunarAgeText = daysLived > 0
+            ? `${formatNumber(Math.floor(daysLived / LUNAR_YEAR), 0)} anos lunares`
+            : "—";
+          resultBox.innerHTML = display("Seu signo lunar", moonSignText, detail, [
+            ["Signo solar", SIGNS[sky.sunSign]],
+            ["Fase da Lua", `${sky.phase} (${formatNumber(sky.illumination * 100, 0)}% iluminada)`],
+            ["Idade da Lua no dia", `${formatNumber(sky.moonAge, 1)} dias desde a lua nova`],
+            ["Sua idade lunar", lunarAgeText],
+            ["Lunações vividas", daysLived > 0 ? formatNumber(Math.floor(daysLived / SYNODIC_MONTH), 0) : "—"],
+          ]);
+        }
+        onInputs(["moon-date", "moon-time", "moon-zone"], calculate);
+      },
+    },
+
+    "encurtador-url": {
+      html: `        <div class="calculator-body">
+          <div class="field"><label for="shorten-url">Link longo</label><input id="shorten-url" type="url" inputmode="url" autocomplete="off" placeholder="https://site.com.br/uma-pagina-com-endereco-bem-comprido"></div>
+          <button type="button" class="action-button" id="shorten-button">Encurtar link</button>
+        </div>
+        <div id="shorten-result"></div>`,
+      setup() {
+        const urlInput = document.getElementById("shorten-url");
+        const button = document.getElementById("shorten-button");
+        const resultBox = document.getElementById("shorten-result");
+        resultBox.innerHTML = emptyDisplay("Link curto", "Cole o link e toque em Encurtar.");
+
+        async function shorten() {
+          const longUrl = urlInput.value.trim();
+          if (!longUrl) {
+            resultBox.innerHTML = emptyDisplay("Link curto", "Cole o link que quer encurtar.");
+            return;
+          }
+          button.disabled = true;
+          resultBox.innerHTML = emptyDisplay("Link curto", "Encurtando…");
+          try {
+            const response = await fetch("/api/encurtar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({ url: longUrl }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+              resultBox.innerHTML = emptyDisplay("Link curto", escapeHtml(data.error || "Não foi possível encurtar agora."));
+              return;
+            }
+            const savedCharacters = data.url.length - data.short_url.length;
+            resultBox.innerHTML = `<div class="display"><span class="display-label">Seu link curto</span><span class="display-text base64-output" id="shorten-output">${escapeHtml(data.short_url)}</span>
+              <span class="display-detail">leva para ${escapeHtml(data.url)}${savedCharacters > 0 ? ` · ${formatNumber(savedCharacters, 0)} caracteres a menos` : ""}</span>
+              <div class="button-row"><button class="copy-button" type="button" data-copy-target="shorten-output">copiar link</button><a class="copy-button" href="${escapeHtml(data.short_url)}" target="_blank" rel="noopener">testar</a></div></div>`;
+          } catch {
+            resultBox.innerHTML = emptyDisplay("Link curto", "Sem conexão com o site. Tente de novo.");
+          } finally {
+            button.disabled = false;
+          }
+        }
+        button.addEventListener("click", shorten);
+        urlInput.addEventListener("keydown", (keyEvent) => {
+          if (keyEvent.key === "Enter") {
+            shorten();
+          }
+        });
+      },
+    },
+
+    "quanto-posso-gastar": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="spend-income">Renda líquida do mês (R$)</label><input id="spend-income" inputmode="numeric" data-money value="4.000,00"><span class="field-hint">o que cai na conta, já sem INSS e IR</span></div>
+            <div class="field"><label for="spend-fixed">Gastos fixos essenciais (R$)</label><input id="spend-fixed" inputmode="numeric" data-money value="2.000,00"><span class="field-hint">aluguel, contas, mercado, transporte, escola</span></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="spend-debts">Parcelas e dívidas (R$)</label><input id="spend-debts" inputmode="numeric" data-money value="300,00"><span class="field-hint">cartão parcelado, empréstimos, financiamentos</span></div>
+            <div class="field"><label for="spend-save-rate">Quanto quer guardar (% da renda)</label><input id="spend-save-rate" inputmode="decimal" value="10"></div>
+            <div class="field"><label for="spend-days">Dias até o próximo salário</label><input id="spend-days" type="number" min="1" max="31" value="30"></div>
+          </div>
+        </div>
+        <div id="spend-result"></div>
+        <div class="calculator-body" id="spend-table"></div>`,
+      setup() {
+        function calculate() {
+          const [income, fixedCosts, debts] = ["spend-income", "spend-fixed", "spend-debts"].map((id) => parseNumber(document.getElementById(id).value) || 0);
+          const saveRate = Math.max(0, parseNumber(document.getElementById("spend-save-rate").value) || 0) / 100;
+          const daysUntilPay = Math.max(1, parseInt(document.getElementById("spend-days").value, 10) || 30);
+          const resultBox = document.getElementById("spend-result");
+          const tableBox = document.getElementById("spend-table");
+          if (!(income > 0)) {
+            resultBox.innerHTML = emptyDisplay("Pode gastar por mês", "Informe a renda líquida.");
+            tableBox.innerHTML = "";
+            return;
+          }
+
+          const savings = roundCents(income * saveRate);
+          const freeToSpend = income - fixedCosts - debts - savings;
+          const share = (amount) => formatPercent(amount / income);
+          const warnings = [];
+          if (debts / income > 0.3) {
+            warnings.push(`As parcelas levam ${share(debts)} da renda. O recomendado é até 30%: evite novas compras parceladas.`);
+          }
+          if (freeToSpend < 0) {
+            warnings.push(`Faltam ${formatMoney(-freeToSpend)} por mês para fechar a conta. Corte gastos, renegocie dívidas ou diminua o quanto vai guardar por enquanto.`);
+          }
+
+          resultBox.innerHTML = display(
+            "Pode gastar por mês (lazer e extras)",
+            formatMoney(Math.max(0, freeToSpend)),
+            freeToSpend > 0 ? `${formatMoney(freeToSpend / daysUntilPay)} por dia · ${formatMoney(freeToSpend / daysUntilPay * 7)} por semana, até o próximo salário` : "não sobra nada para gastos livres",
+            [
+              ["Guardar todo mês", `${formatMoney(savings)} (${share(savings)})`],
+              ["Gastos fixos", `${formatMoney(fixedCosts)} (${share(fixedCosts)})`],
+              ["Parcelas e dívidas", `${formatMoney(debts)} (${share(debts)})`],
+            ],
+            warnings.map((warning) => `<span class="display-detail">⚠ ${warning}</span>`).join(""),
+          );
+
+          // Regra 50-30-20: 50% necessidades, 30% desejos, 20% guardar (ou pagar dívidas)
+          const rows = [
+            ["Necessidades (fixos + parcelas)", 0.5, fixedCosts + debts],
+            ["Desejos (lazer, compras, extras)", 0.3, Math.max(0, freeToSpend)],
+            ["Guardar ou investir", 0.2, savings],
+          ].map(([label, idealRate, yours]) => `<tr><td>${label}</td><td>${formatMoney(income * idealRate)} (${formatPercent(idealRate)})</td><td>${formatMoney(yours)} (${share(yours)})</td></tr>`).join("");
+          tableBox.innerHTML = `<h3>Comparação com a regra 50-30-20</h3>
+            <table class="data-table"><thead><tr><th>Parte</th><th>Sugerido</th><th>Seu orçamento</th></tr></thead><tbody>${rows}</tbody></table>
+            <p class="notice">A regra 50-30-20 é uma referência, não uma regra fixa. Com dívidas caras (cartão, cheque especial), vale usar os 20% para quitá-las primeiro.</p>`;
+        }
+        onInputs(["spend-income", "spend-fixed", "spend-debts", "spend-save-rate", "spend-days"], calculate);
+      },
+    },
+
+    "quanto-guardar-por-mes": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="goal-amount">Meta (R$)</label><input id="goal-amount" inputmode="numeric" data-money value="50.000,00"></div>
+            <div class="field"><label for="goal-current">Já tenho guardado (R$)</label><input id="goal-current" inputmode="numeric" data-money value="0"></div>
+            <div class="field"><label for="goal-months">Prazo (meses)</label><input id="goal-months" type="number" min="1" max="600" value="36"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="goal-rate">Rendimento (% ao ano)</label><input id="goal-rate" inputmode="decimal" value="10"></div>
+          </div>
+          <div class="button-row" id="goal-rate-shortcuts">
+            <button type="button" class="secondary-button" data-rate="cdi">100% do CDI</button>
+            <button type="button" class="secondary-button" data-rate="savings">Poupança</button>
+            <button type="button" class="secondary-button" data-rate="none">Sem rendimento</button>
+          </div>
+          <span class="field-hint" id="goal-rate-hint">Buscando as taxas de hoje…</span>
+        </div>
+        <div id="goal-result"></div>
+        <div class="calculator-body" id="goal-table"></div>`,
+      setup() {
+        const rateInput = document.getElementById("goal-rate");
+        const currentRates = { none: 0 };
+
+        function calculate() {
+          const [goal, current] = ["goal-amount", "goal-current"].map((id) => parseNumber(document.getElementById(id).value) || 0);
+          const months = parseInt(document.getElementById("goal-months").value, 10) || 0;
+          const yearlyRate = (parseNumber(rateInput.value) || 0) / 100;
+          const resultBox = document.getElementById("goal-result");
+          const tableBox = document.getElementById("goal-table");
+          if (!(goal > 0) || months <= 0) {
+            resultBox.innerHTML = emptyDisplay("Guardar por mês", "Informe a meta e o prazo.");
+            tableBox.innerHTML = "";
+            return;
+          }
+
+          const monthlyRate = (1 + yearlyRate) ** (1 / 12) - 1;
+          const growth = (1 + monthlyRate) ** months;
+          const currentAtEnd = current * growth;
+          const goalDate = new Date();
+          goalDate.setMonth(goalDate.getMonth() + months);
+          const goalDateText = goalDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+          if (currentAtEnd >= goal) {
+            resultBox.innerHTML = display("Guardar por mês", formatMoney(0), `o que você já tem chega a ${formatMoney(currentAtEnd)} em ${goalDateText}, sem novos depósitos`);
+            tableBox.innerHTML = "";
+            return;
+          }
+
+          // Depósito no fim de cada mês: meta = guardado × (1+i)ⁿ + depósito × [(1+i)ⁿ − 1] ÷ i
+          const monthlyDeposit = monthlyRate > 0 ? (goal - currentAtEnd) * monthlyRate / (growth - 1) : (goal - current) / months;
+          const totalDeposited = current + monthlyDeposit * months;
+          const interestEarned = goal - totalDeposited;
+          const withoutInterest = Math.max(0, (goal - current) / months);
+          resultBox.innerHTML = display("Guardar por mês", formatMoney(monthlyDeposit), `por ${plural(months)} para juntar ${formatMoney(goal)} até ${goalDateText}`, [
+            ["Total depositado", formatMoney(totalDeposited)],
+            ["Juros ganhos", formatMoney(interestEarned)],
+            ["Sem rendimento seria", `${formatMoney(withoutInterest)}/mês`],
+            ["Rendimento ao mês", formatPercent(monthlyRate)],
+          ]);
+
+          // Saldo ao fim de cada ano (e no último mês)
+          const rows = [];
+          for (let month = 12; month < months + 12; month += 12) {
+            const monthNumber = Math.min(month, months);
+            const periodGrowth = (1 + monthlyRate) ** monthNumber;
+            const balance = current * periodGrowth + (monthlyRate > 0 ? monthlyDeposit * (periodGrowth - 1) / monthlyRate : monthlyDeposit * monthNumber);
+            const deposited = current + monthlyDeposit * monthNumber;
+            rows.push(`<tr><td>${monthNumber === months && months % 12 ? `Mês ${monthNumber}` : `Ano ${monthNumber / 12}`}</td><td>${formatMoney(deposited)}</td><td>${formatMoney(balance - deposited)}</td><td>${formatMoney(balance)}</td></tr>`);
+          }
+          tableBox.innerHTML = `<table class="data-table"><thead><tr><th>Quando</th><th>Depositado</th><th>Juros</th><th>Saldo</th></tr></thead><tbody>${rows.join("")}</tbody></table>
+            <p class="notice">Simulação bruta, com a mesma taxa o prazo todo. Em CDB e Tesouro, o IR (de 22,5% a 15%) sai do rendimento; poupança, LCI e LCA são isentas. Para comparar investimentos, use a calculadora de CDB, LCI, Tesouro ou poupança.</p>`;
+        }
+        function plural(months) {
+          return months === 1 ? "1 mês" : `${formatNumber(months, 0)} meses`;
+        }
+
+        document.getElementById("goal-rate-shortcuts").addEventListener("click", (clickEvent) => {
+          const button = clickEvent.target.closest("[data-rate]");
+          if (button && currentRates[button.dataset.rate] !== undefined) {
+            rateInput.value = formatNumber(currentRates[button.dataset.rate], 2);
+            calculate();
+          }
+        });
+        onInputs(["goal-amount", "goal-current", "goal-months", "goal-rate"], calculate);
+
+        // CDI e poupança atuais (Banco Central, pela faixa de indicadores do site)
+        const rateHint = document.getElementById("goal-rate-hint");
+        let typedByPerson = false;
+        rateInput.addEventListener("input", () => { typedByPerson = true; }, { once: true });
+        fetch("/api/indicadores", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+          .then((response) => (response.ok ? response.json() : Promise.reject()))
+          .then((data) => {
+            const parts = [];
+            if (data.cdi) {
+              currentRates.cdi = data.cdi.yearly;
+              parts.push(`CDI de ${formatNumber(data.cdi.yearly, 2)}% ao ano`);
+            }
+            if (data.savings) {
+              currentRates.savings = ((1 + data.savings.monthly / 100) ** 12 - 1) * 100;
+              parts.push(`poupança de ${formatNumber(currentRates.savings, 2)}% ao ano`);
+            }
+            if (currentRates.cdi !== undefined && !typedByPerson && !new URLSearchParams(location.search).has("goal-rate")) {
+              rateInput.value = formatNumber(currentRates.cdi, 2);
+              calculate();
+            }
+            rateHint.textContent = parts.length ? `Taxas de hoje (Banco Central): ${parts.join(" e ")}.` : "Digite o rendimento esperado ao ano.";
+          })
+          .catch(() => {
+            rateHint.textContent = "Não foi possível buscar as taxas de hoje; digite o rendimento esperado ao ano.";
+          });
       },
     },
 

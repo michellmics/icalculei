@@ -12,6 +12,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 1. Conta: `public/assets/js/calculators.js`, objeto `CALCULATORS["id"]` (`html` + `setup`).
 2. Textos (lead, explicação, perguntas frequentes) e metadados: `content/tools.php`, mesmo id.
 3. Sempre atualizar `reviewed` (data da revisão) em `content/tools.php`.
+   - `answer` (opcional): resposta direta de 40 a 60 palavras abaixo do título, no lugar do lead (destaque no Google). Se tiver números (tabelas, datas), atualizar junto quando eles mudarem.
    - SEO: toda calculadora tem `seo_title` (busca de cauda longa no começo, até ~55 caracteres) e pelo menos 2 perguntas frequentes em `<details>` (viram FAQPage). Textos curtos e diretos.
 4. Nova calculadora: criar nos dois arquivos com o mesmo id; ela ganha página, sitemap e aparece no diretório sozinha.
    Depois rode `php bin/og-images.php` para gerar o banner de compartilhamento dela (também ao mudar nome ou descrição).
@@ -21,6 +22,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Bloco `TABELAS OFICIAIS` em `public/assets/js/calculators.js` (`TAX_TABLES`), com fonte e `validFrom`.
 - Conferir SEMPRE em fonte oficial (gov.br: Receita Federal, INSS/Previdência) antes de mudar.
 - Depois de mudar, atualizar `reviewed` de: salario-liquido, rescisao, decimo-terceiro, ferias.
+- As tabelas também aparecem no texto: `$taxTablesHtml` no topo de `content/tools.php` (13º e férias), junto com as tabelas de exemplos dessas duas páginas e os exemplos da notícia do 13º. Recalcular e atualizar ao mudar.
 - Vigente: tabelas de 2026 (Portaria Interministerial MPS/MF nº 13/2026; Lei 15.270/2025 com redução até R$ 7.350).
 - Seguro-desemprego: `TAX_TABLES.unemploymentInsurance` (tabela do MTE, muda todo janeiro pelo INPC; piso = salário mínimo). Ao mudar, atualizar `reviewed` e o texto de seguro-desemprego em `content/tools.php`.
 - IPVA e licenciamento por estado: objeto `STATES` dentro de `CALCULATORS["ipva"]` (muda todo ano; conferir nas Sefaz/Detrans). IOF de crédito: constantes em `CALCULATORS["financiamento-veiculo"]`.
@@ -82,7 +84,8 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 
 ## Feriados (/feriados/{ano} e /feriados/{ano}/{uf})
 - Dados em `content/holidays.php` (nacionais, facultativos, estaduais e das 27 capitais; datas "mm-dd" ou relativas à Páscoa). Lógica em `app/Services/Holidays.php`, páginas em `HolidayController` (+ `.ics` em `/agenda`). Conferir datas locais todo ano e atualizar `reviewed`.
-- Card "Próximo feriado" na página inicial (canto inferior direito, no lugar da antiga conta rápida). 56 páginas no sitemap (ano atual e o próximo, nacional e por estado).
+- Card "Próximo feriado" na página inicial (canto inferior direito, no lugar da antiga conta rápida). 80 páginas no sitemap (ano atual e o próximo, nacional, por mês e por estado).
+- Páginas por mês: `/feriados/2026/novembro` (mesma rota dos estados; `HolidayController::state` reconhece o mês por `Holidays::MONTH_SLUGS`). Mostram nacionais, estaduais e das capitais de todos os estados (`Holidays::localForMonth`), dias úteis e perguntas frequentes geradas a partir dos dados (FAQPage).
 
 ## App instalado (PWA): `public/assets/js/app-shell.js`
 - Só no modo app: puxar para atualizar e barra de navegação no rodapé (Voltar, Avançar, Início, Atualizar) em telas de celular. Marcação `#app-nav` nos layouts do site e do painel.
@@ -114,6 +117,10 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 ## Banner de compartilhamento (og:image)
 - `php bin/og-images.php` gera PNGs 1200×630 em `public/assets/img/og/` (um por calculadora + `vibe2000.png` geral + `feriados.png`), com GD e a fonte IBM Plex Sans (OFL) de `bin/fonts/`. Os PNGs vão no commit; o servidor não desenha nada.
 - `share_banner($nome)` (helpers.php) devolve o endereço com `?v=` da data do arquivo. Notícias usam a própria foto.
+
+## Encurtador de URL (/calculadoras/encurtador-url)
+- `app/Controllers/ShortLinkController.php` + `app/Models/ShortLink.php`, tabela `short_links` (migration 005). `POST /api/encurtar` cria; `/l/{code}` redireciona (302, conta cliques, noindex, fora do sitemap e do service worker).
+- Mesmo link longo = mesmo código. Limite de 20 links por hora por visitante. Link de golpe/spam: apagar a linha no banco.
 
 ## Ferramentas de TI (categoria "dev", nome no menu: TI)
 - Tudo roda no navegador (nada vai para o servidor): `json-csv` (Excel BR = `;` + vírgula decimal + BOM), `regex` (padrões prontos em `PRESETS`), `cores` (o canvas do navegador interpreta a cor), `tamanho-dados` (bases 1.000 e 1.024 + tempo de download), `http-status` (lista `CODES`, inclui 520–526 do Cloudflare).

@@ -9,7 +9,9 @@ declare(strict_types=1);
  *   seo_title título para o Google: a busca exata no começo (ex.: "Calculadora de IMC: Índice de Massa Corporal")
  *   ready     true = funcionando | false = aparece como "em breve"
  *   reviewed  data da última revisão (aparece na página da calculadora)
- *   lead      frase de abertura da página
+ *   lead      frase de abertura da página (também é a descrição no Google)
+ *   answer    opcional: resposta direta de 40 a 60 palavras, com fórmula e um exemplo com números.
+ *             Aparece logo abaixo do título, no lugar do lead (é o trecho que o Google costuma pôr em destaque)
  *   explainer texto explicativo (fórmula, exemplo, perguntas frequentes)
  *             Perguntas em <details><summary>pergunta</summary><p>resposta</p></details>:
  *             viram também dados estruturados FAQPage para o Google.
@@ -17,6 +19,33 @@ declare(strict_types=1);
  * A conta de cada calculadora fica em public/assets/js/calculators.js, com o mesmo id.
  * Ao revisar uma calculadora, atualize o "reviewed".
  */
+
+// Tabelas de INSS e IR mostradas no texto do 13º e das férias.
+// Quando mudar o TAX_TABLES do calculators.js, atualize também aqui e os exemplos dessas duas páginas.
+$taxTablesHtml = <<<'HTML'
+<h2>Tabelas de INSS e Imposto de Renda de 2026</h2>
+<div class="table-scroll"><table class="data-table">
+  <thead><tr><th>Salário de contribuição (INSS)</th><th>Alíquota</th></tr></thead>
+  <tbody>
+    <tr><td>até R$ 1.621,00</td><td>7,5%</td></tr>
+    <tr><td>de R$ 1.621,01 a R$ 2.902,84</td><td>9%</td></tr>
+    <tr><td>de R$ 2.902,85 a R$ 4.354,27</td><td>12%</td></tr>
+    <tr><td>de R$ 4.354,28 a R$ 8.475,55</td><td>14%</td></tr>
+  </tbody>
+</table></div>
+<p>O INSS é progressivo: cada alíquota vale só para a parte do valor dentro da faixa. Acima de R$ 8.475,55, o desconto para no teto.</p>
+<div class="table-scroll"><table class="data-table">
+  <thead><tr><th>Base de cálculo mensal (IR)</th><th>Alíquota</th><th>Dedução</th></tr></thead>
+  <tbody>
+    <tr><td>até R$ 2.428,80</td><td>isento</td><td>—</td></tr>
+    <tr><td>de R$ 2.428,81 a R$ 2.826,65</td><td>7,5%</td><td>R$ 182,16</td></tr>
+    <tr><td>de R$ 2.826,66 a R$ 3.751,05</td><td>15%</td><td>R$ 394,16</td></tr>
+    <tr><td>de R$ 3.751,06 a R$ 4.664,68</td><td>22,5%</td><td>R$ 675,49</td></tr>
+    <tr><td>acima de R$ 4.664,68</td><td>27,5%</td><td>R$ 908,73</td></tr>
+  </tbody>
+</table></div>
+<p>Desde 2026, a Lei 15.270/2025 reduz o imposto: quem recebe até R$ 5.000 no mês fica isento, e a redução diminui aos poucos até R$ 7.350. Cada dependente deduz R$ 189,59 da base.</p>
+HTML;
 
 return [
     'categories' => [
@@ -42,6 +71,7 @@ return [
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Simule quanto um investimento rende com juros sobre juros e aportes todo mês.',
+            'answer' => 'Nos juros compostos, cada mês rende sobre o valor já acumulado: montante = capital × (1 + taxa)ⁿ. Exemplo: R$ 10.000 a 1% ao mês por 12 meses viram R$ 11.268,25, ou seja, R$ 1.268,25 de juros.',
             'explainer' => <<<'HTML'
 <h2>O que são juros compostos</h2>
 <p>Cada mês rende sobre o valor do mês anterior, que já inclui os juros. É o juros sobre juros.</p>
@@ -85,6 +115,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Compare as parcelas de um financiamento pela tabela Price (parcelas iguais) e pelo SAC (parcelas decrescentes).',
+            'answer' => 'Na tabela Price as parcelas são iguais do começo ao fim. No SAC a amortização é fixa: as parcelas começam maiores, caem todo mês e o total de juros é menor. Parcela Price = valor × taxa ÷ [1 − (1 + taxa)⁻ⁿ].',
             'explainer' => <<<'HTML'
 <h2>Price ou SAC?</h2>
 <p>Na <b>Price</b> as parcelas são iguais do começo ao fim. No <b>SAC</b> a amortização é fixa e as parcelas começam maiores e vão diminuindo. No total, o SAC costuma cobrar menos juros.</p>
@@ -145,24 +176,58 @@ HTML,
         ],
         'decimo-terceiro' => [
             'name' => '13º salário',
-            'seo_title' => 'Calculadora de 13º Salário Líquido 2026',
+            'seo_title' => 'Calculadora de 13º Salário 2026: 1ª e 2ª Parcela Líquida',
             'symbol' => '13º',
             'category' => 'trabalho',
             'description' => 'Parcelas brutas e líquidas com descontos de 2026.',
-            'keywords' => 'décimo terceiro',
+            'keywords' => 'décimo terceiro primeira parcela segunda parcela proporcional médias horas extras',
             'ready' => true,
-            'reviewed' => '2026-09-30',
-            'lead' => 'Calcule o 13º salário bruto e líquido, com o valor de cada parcela e os descontos de 2026.',
+            'reviewed' => '2026-10-01',
+            'lead' => 'Calcule o 13º salário de 2026: valor da 1ª e da 2ª parcela, proporcional aos meses trabalhados, com as médias de horas extras e os descontos de INSS e IR.',
+            'answer' => 'O 13º é o salário dividido por 12 e multiplicado pelos meses trabalhados. Em 2026, a 1ª parcela (metade, sem descontos) vence em 30 de novembro e a 2ª, com INSS e IR, em 18 de dezembro. Exemplo: salário de R$ 3.000 dá R$ 2.751,40 líquidos no total.',
             'explainer' => <<<'HTML'
-<h2>Como é calculado o 13º</h2>
-<p>O 13º é o salário dividido por 12 e multiplicado pelos meses trabalhados. A primeira parcela é metade do valor, sem descontos. Na segunda são descontados o INSS e o Imposto de Renda, calculados sobre o 13º inteiro e separados do salário do mês.</p>
-<p class="formula">13º = salário ÷ 12 × meses trabalhados</p>
-<p>A redução do IR criada pela Lei 15.270/2025 também vale para o 13º: quem tem 13º de até R$ 5.000 não paga imposto sobre ele.</p>
+<h2>Como calcular o 13º salário, passo a passo</h2>
+<p><b>1.</b> Some ao salário a média mensal das verbas variáveis habituais: horas extras, adicional noturno, comissões.</p>
+<p><b>2.</b> Divida por 12 e multiplique pelos meses trabalhados no ano. Conta como mês inteiro aquele em que você trabalhou 15 dias ou mais.</p>
+<p class="formula">13º bruto = (salário + médias) ÷ 12 × meses trabalhados</p>
+<p><b>3.</b> A 1ª parcela é metade desse valor, sem descontos.</p>
+<p><b>4.</b> Na 2ª parcela são descontados o INSS e o Imposto de Renda, calculados sobre o 13º inteiro e separados do salário do mês. Por isso ela é sempre menor que a 1ª.</p>
+<h2>Datas de pagamento em 2026</h2>
+<p>A 1ª parcela vence em <b>30 de novembro</b> (segunda-feira). O prazo da 2ª é 20 de dezembro, mas a data cai num domingo: o pagamento deve sair até <b>sexta-feira, 18 de dezembro</b>. A empresa pode pagar tudo de uma vez, até 30 de novembro.</p>
+<h2>Exemplos de 13º líquido em 2026</h2>
+<p>Com 12 meses trabalhados, sem dependentes e sem médias de variáveis:</p>
+<div class="table-scroll"><table class="data-table">
+  <thead><tr><th>Salário</th><th>1ª parcela</th><th>2ª parcela</th><th>Total líquido</th></tr></thead>
+  <tbody>
+    <tr><td>R$ 1.621,00 (mínimo)</td><td>R$ 810,50</td><td>R$ 688,93</td><td>R$ 1.499,43</td></tr>
+    <tr><td>R$ 2.000,00</td><td>R$ 1.000,00</td><td>R$ 844,31</td><td>R$ 1.844,31</td></tr>
+    <tr><td>R$ 2.500,00</td><td>R$ 1.250,00</td><td>R$ 1.049,31</td><td>R$ 2.299,31</td></tr>
+    <tr><td>R$ 3.000,00</td><td>R$ 1.500,00</td><td>R$ 1.251,40</td><td>R$ 2.751,40</td></tr>
+    <tr><td>R$ 4.000,00</td><td>R$ 2.000,00</td><td>R$ 1.631,40</td><td>R$ 3.631,40</td></tr>
+  </tbody>
+</table></div>
+HTML . $taxTablesHtml . <<<'HTML'
+<p>No 13º, o IR é calculado separado do salário (tributação exclusiva) e não usa o desconto simplificado: da base saem só o INSS e os dependentes.</p>
 <h2>Perguntas frequentes</h2>
 <div class="faq">
-  <details><summary>Quando o 13º é pago?</summary><p>A primeira parcela até 30 de novembro e a segunda até 20 de dezembro. A empresa pode pagar tudo de uma vez, até 30 de novembro.</p></details>
+  <details><summary>Quando o 13º é pago em 2026?</summary><p>A 1ª parcela até 30 de novembro e a 2ª até 18 de dezembro, porque o dia 20 cai num domingo. A empresa pode pagar tudo de uma vez, até 30 de novembro.</p></details>
+  <details><summary>Por que a 2ª parcela é menor?</summary><p>Porque o INSS e o Imposto de Renda do 13º inteiro são descontados só na 2ª parcela. A 1ª é metade do valor bruto, sem descontos.</p></details>
   <details><summary>Quem trabalhou só alguns meses recebe?</summary><p>Sim, proporcional: 1/12 do salário por mês trabalhado. Conta como mês inteiro o mês em que trabalhou pelo menos 15 dias.</p></details>
+  <details><summary>Horas extras entram no 13º?</summary><p>Sim. Horas extras, adicional noturno, comissões e outras verbas habituais entram pela média do ano. Informe essa média no campo de médias da calculadora.</p></details>
+  <details><summary>Posso receber a 1ª parcela nas férias?</summary><p>Sim. Pela Lei 4.749/1965, quem pedir em janeiro recebe a 1ª parcela junto com as férias. Nesse caso, informe o valor recebido no campo "1ª parcela já recebida".</p></details>
+  <details><summary>Quem é demitido recebe o 13º?</summary><p>Sim, o 13º proporcional entra na rescisão, exceto na demissão por justa causa. Use a calculadora de rescisão para ver o valor.</p></details>
+  <details><summary>Aposentados do INSS recebem 13º?</summary><p>Sim. Aposentados e pensionistas recebem o abono anual em datas definidas pelo governo a cada ano. Não há desconto de INSS; o Imposto de Renda segue a tabela.</p></details>
+  <details><summary>E se a empresa não pagar no prazo?</summary><p>O atraso pode gerar multa para a empresa na fiscalização do trabalho. Procure o sindicato da categoria ou registre denúncia nos canais do Ministério do Trabalho e Emprego.</p></details>
+  <details><summary>Quanto é o 13º de quem ganha um salário mínimo?</summary><p>Em 2026, com 12 meses trabalhados: 1ª parcela de R$ 810,50 e 2ª de R$ 688,93, com R$ 121,57 de INSS. Total líquido de R$ 1.499,43.</p></details>
 </div>
+<h2>Fontes</h2>
+<ul>
+  <li><a href="https://www.planalto.gov.br/ccivil_03/leis/l4090.htm" rel="noopener">Lei 4.090/1962</a> (cria o 13º salário)</li>
+  <li><a href="https://www.planalto.gov.br/ccivil_03/leis/l4749.htm" rel="noopener">Lei 4.749/1965</a> (parcelas, prazos e adiantamento nas férias)</li>
+  <li><a href="https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm" rel="noopener">Lei 15.270/2025</a> (redução do Imposto de Renda)</li>
+  <li><a href="https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal" rel="noopener">INSS: tabela de contribuição mensal</a> (Portaria Interministerial MPS/MF nº 13/2026)</li>
+  <li><a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas" rel="noopener">Receita Federal: tabelas do Imposto de Renda</a></li>
+</ul>
 HTML,
         ],
         'ferias' => [
@@ -171,40 +236,80 @@ HTML,
             'symbol' => '⛱',
             'category' => 'trabalho',
             'description' => 'Férias com 1/3, abono e descontos de 2026.',
-            'keywords' => 'férias um terço abono',
+            'keywords' => 'férias um terço abono vender 10 dias líquido clt',
             'ready' => true,
-            'reviewed' => '2026-09-30',
+            'reviewed' => '2026-10-01',
             'lead' => 'Calcule as férias com o terço constitucional, a venda de 10 dias e os descontos de 2026.',
+            'answer' => 'As férias são o salário dividido por 30, multiplicado pelos dias de férias, mais 1/3. Sobre esse total saem INSS e IR, e o pagamento sai até 2 dias antes. Exemplo: salário de R$ 3.000 e 30 dias dá R$ 4.000 brutos e R$ 3.631,40 líquidos.',
             'explainer' => <<<'HTML'
-<h2>Como são calculadas as férias</h2>
-<p>O valor das férias é o salário proporcional aos dias, mais um terço. Sobre férias e 1/3 incidem INSS e Imposto de Renda. Quem vende 10 dias (abono pecuniário) recebe esses dias com 1/3, sem desconto de INSS e IR.</p>
-<p class="formula">férias = salário ÷ 30 × dias · 1/3 = férias ÷ 3</p>
-<p>O pagamento deve ser feito até 2 dias antes do início das férias.</p>
+<h2>Como calcular as férias, passo a passo</h2>
+<p><b>1.</b> Divida o salário por 30 para achar o valor do dia. Quem recebe horas extras, comissões ou adicionais habituais soma a média deles ao salário.</p>
+<p><b>2.</b> Multiplique pelos dias de férias.</p>
+<p><b>3.</b> Some o terço constitucional: um terço do valor das férias.</p>
+<p class="formula">férias brutas = salário ÷ 30 × dias + 1/3</p>
+<p><b>4.</b> Desconte o INSS e o Imposto de Renda sobre férias + 1/3. As férias são calculadas separadas do salário do mês.</p>
+<p><b>5.</b> Se vender 10 dias (abono pecuniário), some esses dias com o 1/3 deles. O abono não tem desconto de INSS nem de IR.</p>
+<p>O pagamento deve sair até <b>2 dias antes</b> do início das férias.</p>
+<h2>Exemplos de férias líquidas em 2026</h2>
+<p>Sem dependentes e sem médias de variáveis:</p>
+<div class="table-scroll"><table class="data-table">
+  <thead><tr><th>Salário</th><th>30 dias de férias</th><th>20 dias + 10 vendidos</th></tr></thead>
+  <tbody>
+    <tr><td>R$ 1.621,00 (mínimo)</td><td>R$ 1.991,13</td><td>R$ 2.053,26</td></tr>
+    <tr><td>R$ 2.000,00</td><td>R$ 2.450,98</td><td>R$ 2.530,98</td></tr>
+    <tr><td>R$ 3.000,00</td><td>R$ 3.631,40</td><td>R$ 3.784,31</td></tr>
+    <tr><td>R$ 4.500,00</td><td>R$ 4.973,39</td><td>R$ 5.631,40</td></tr>
+    <tr><td>R$ 6.000,00</td><td>R$ 6.040,64</td><td>R$ 7.329,38</td></tr>
+  </tbody>
+</table></div>
+<p>Vender 10 dias aumenta o valor recebido porque o abono não tem desconto, mas você descansa menos.</p>
+HTML . $taxTablesHtml . <<<'HTML'
 <h2>Perguntas frequentes</h2>
 <div class="faq">
-  <details><summary>Posso vender as férias?</summary><p>Você pode vender até 1/3 das férias (10 dias, no caso de 30), o chamado abono pecuniário. Esses dias são pagos com 1/3 e sem desconto de INSS e IR.</p></details>
+  <details><summary>Quando as férias são pagas?</summary><p>Até 2 dias antes do início das férias (art. 145 da CLT). O salário do mês seguinte vem menor, só com os dias trabalhados depois da volta.</p></details>
+  <details><summary>Posso vender as férias?</summary><p>Você pode vender até 1/3 das férias (10 dias, no caso de 30), o chamado abono pecuniário. É preciso pedir até 15 dias antes do fim do período aquisitivo. Esses dias são pagos com 1/3 e sem desconto de INSS e IR.</p></details>
   <details><summary>As férias podem ser divididas?</summary><p>Sim, em até 3 períodos, se o empregado concordar: um deles com pelo menos 14 dias e os outros com pelo menos 5 dias cada.</p></details>
+  <details><summary>Faltas diminuem as férias?</summary><p>Sim, as faltas sem justificativa no período aquisitivo: até 5 faltas, 30 dias; de 6 a 14, 24 dias; de 15 a 23, 18 dias; de 24 a 32, 12 dias. Com mais de 32 faltas, perde o direito às férias daquele período.</p></details>
+  <details><summary>As férias podem começar perto de feriado?</summary><p>Não. A CLT proíbe que as férias comecem nos 2 dias que antecedem um feriado ou o dia de descanso semanal remunerado (art. 134, § 3º).</p></details>
+  <details><summary>O que acontece se a empresa atrasar as férias?</summary><p>As férias devem ser dadas nos 12 meses depois do período aquisitivo. Se passarem desse prazo, a empresa paga o valor em dobro.</p></details>
+  <details><summary>Horas extras entram nas férias?</summary><p>Sim. Horas extras, comissões e adicionais habituais entram pela média do período. Some essa média ao salário na calculadora.</p></details>
+  <details><summary>Posso receber a 1ª parcela do 13º nas férias?</summary><p>Sim, se pedir em janeiro. Use a calculadora de 13º para ver quanto fica a 2ª parcela depois.</p></details>
 </div>
+<h2>Fontes</h2>
+<ul>
+  <li><a href="https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm" rel="noopener">CLT, arts. 129 a 145</a> (direito, faltas, divisão, abono, prazos e pagamento)</li>
+  <li><a href="https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm" rel="noopener">Lei 15.270/2025</a> (redução do Imposto de Renda)</li>
+  <li><a href="https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal" rel="noopener">INSS: tabela de contribuição mensal</a> (Portaria Interministerial MPS/MF nº 13/2026)</li>
+  <li><a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas" rel="noopener">Receita Federal: tabelas do Imposto de Renda</a></li>
+</ul>
 HTML,
         ],
         'hora-extra' => [
             'name' => 'Hora extra',
-            'seo_title' => 'Calculadora de Hora Extra 50% e 100%',
+            'seo_title' => 'Calculadora de Hora Extra com DSR e Descontos 2026',
             'symbol' => '+h',
             'category' => 'trabalho',
-            'description' => 'Valor da hora normal e da hora extra.',
-            'keywords' => 'adicional 50% 100% jornada',
+            'description' => 'Horas extras 50% e 100%, DSR, INSS, IR e salário líquido.',
+            'keywords' => 'adicional 50% 100% jornada dsr descanso semanal remunerado inss irrf líquido',
             'ready' => true,
-            'reviewed' => '2026-09-30',
-            'lead' => 'Descubra o valor da sua hora de trabalho e quanto recebe pelas horas extras.',
+            'reviewed' => '2026-10-01',
+            'lead' => 'Calcule as horas extras de 50% e 100%, o reflexo no DSR e quanto sobra no salário líquido depois do INSS e do Imposto de Renda.',
+            'answer' => 'A hora extra vale no mínimo 50% a mais que a hora normal (salário ÷ jornada mensal); em domingos e feriados, 100%. Some ainda o DSR: total das extras ÷ dias úteis × domingos e feriados. Exemplo: salário de R$ 3.000 e 220 horas → hora normal de R$ 13,64 e hora extra de R$ 20,45.',
             'explainer' => <<<'HTML'
 <h2>Como calcular hora extra</h2>
-<p>Divida o salário pela jornada mensal para achar o valor da hora. A hora extra vale no mínimo 50% a mais; convenções coletivas podem prever percentuais maiores.</p>
+<p>Divida o salário pela jornada mensal para achar o valor da hora. A hora extra vale no mínimo 50% a mais; em domingos e feriados sem folga, 100%. Convenções coletivas podem prever percentuais maiores.</p>
 <p class="formula">hora extra = (salário ÷ jornada) × (1 + adicional)</p>
-<p class="notice">O reflexo das horas extras no descanso semanal remunerado (DSR) não está incluído.</p>
+<h2>DSR sobre horas extras</h2>
+<p>Horas extras feitas com frequência aumentam também o descanso semanal remunerado (DSR). O valor das extras é dividido pelos dias úteis do mês e multiplicado pelos domingos e feriados.</p>
+<p class="formula">DSR = (total das horas extras ÷ dias úteis) × (domingos + feriados)</p>
+<h2>Descontos</h2>
+<p>Horas extras e DSR entram no salário do mês: somam na base do INSS e do Imposto de Renda (tabelas de 2026, com a redução da Lei 15.270/2025). Por isso o valor que sobra no líquido é menor que o bruto das extras. A empresa ainda deposita 8% de FGTS sobre elas.</p>
 <h2>Perguntas frequentes</h2>
 <div class="faq">
   <details><summary>Qual o adicional da hora extra?</summary><p>No mínimo 50% sobre a hora normal. Em domingos e feriados trabalhados sem folga compensatória, costuma ser 100%. A convenção coletiva pode prever percentuais maiores.</p></details>
+  <details><summary>Hora extra tem DSR?</summary><p>Sim. Horas extras habituais refletem no descanso semanal remunerado (Súmula 172 do TST). O DSR é pago junto com as extras no mesmo mês.</p></details>
+  <details><summary>Hora extra tem desconto de INSS e Imposto de Renda?</summary><p>Sim. Horas extras e DSR somam ao salário do mês e entram na base do INSS e do IR. Quem recebe até R$ 5.000 no mês não paga IR em 2026.</p></details>
+  <details><summary>Sábado conta como dia útil no DSR?</summary><p>Sim, sábado conta como dia útil, mesmo para quem não trabalha nele. Só domingos e feriados entram como dias de descanso.</p></details>
   <details><summary>Quantas horas extras posso fazer por dia?</summary><p>Pela CLT, até 2 horas extras por dia, salvo exceções previstas em lei ou em acordo.</p></details>
 </div>
 HTML,
@@ -217,8 +322,9 @@ HTML,
             'description' => 'Verbas e valor líquido ao sair da empresa.',
             'keywords' => 'demissão acerto aviso prévio fgts multa',
             'ready' => true,
-            'reviewed' => '2026-09-30',
+            'reviewed' => '2026-10-01',
             'lead' => 'Estime as verbas rescisórias e o valor líquido a receber ao sair da empresa, com as regras da CLT e as tabelas de 2026.',
+            'answer' => 'Na demissão sem justa causa você recebe saldo de salário, aviso prévio (30 dias + 3 por ano de empresa), 13º e férias proporcionais com 1/3, férias vencidas, multa de 40% do FGTS e o saque do FGTS. A empresa tem até 10 dias depois do fim do contrato para pagar.',
             'explainer' => <<<'HTML'
 <h2>O que entra na rescisão</h2>
 <p><b>Demissão sem justa causa:</b> saldo de salário, aviso prévio, 13º e férias proporcionais com 1/3, férias vencidas com 1/3, multa de 40% do FGTS e saque do FGTS.</p>
@@ -245,6 +351,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Descubra quanto vai receber de seguro-desemprego e em quantas parcelas, com a tabela de 2026.',
+            'answer' => 'O seguro-desemprego paga de 3 a 5 parcelas, conforme o tempo trabalhado e quantas vezes você já pediu. Em 2026, cada parcela vai de R$ 1.621,00 a R$ 2.518,65, calculada pela média dos 3 últimos salários. O pedido é feito de 7 a 120 dias depois da demissão.',
             'explainer' => <<<'HTML'
 <h2>Como é calculado o seguro-desemprego em 2026</h2>
 <p>O valor da parcela depende da média dos salários dos 3 meses anteriores à demissão:</p>
@@ -273,8 +380,9 @@ HTML,
             'description' => 'Salário depois de INSS e IR, tabelas 2026.',
             'keywords' => 'inss irrf desconto imposto de renda 5 mil',
             'ready' => true,
-            'reviewed' => '2026-09-30',
+            'reviewed' => '2026-10-01',
             'lead' => 'Descubra quanto cai na sua conta depois dos descontos de INSS e Imposto de Renda, com as tabelas de 2026.',
+            'answer' => 'O salário líquido é o salário bruto menos o INSS (de 7,5% a 14%, por faixas) e o Imposto de Renda. Em 2026, quem ganha até R$ 5.000 por mês não paga IR. Exemplo: salário de R$ 3.000 tem R$ 248,60 de INSS e fica em R$ 2.751,40 líquidos.',
             'explainer' => <<<'HTML'
 <h2>Como é calculado o salário líquido em 2026</h2>
 <p><b>1. INSS:</b> é progressivo. Cada faixa do salário paga a sua alíquota: 7,5% até R$ 1.621,00; 9% até R$ 2.902,84; 12% até R$ 4.354,27; e 14% até o teto de R$ 8.475,55.</p>
@@ -299,6 +407,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Calcule porcentagens de quatro jeitos diferentes. O resultado aparece enquanto você digita.',
+            'answer' => 'Para calcular X% de um valor, multiplique o valor por X e divida por 100: 15% de 200 = 200 × 15 ÷ 100 = 30. Para saber quantos por cento A é de B, divida A por B e multiplique por 100: 30 é 15% de 200.',
             'explainer' => <<<'HTML'
 <h2>Como calcular porcentagem</h2>
 <p>Porcentagem é uma fração de 100. Para saber quanto é X% de um valor, divida X por 100 e multiplique pelo valor.</p>
@@ -321,6 +430,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Descubra o valor que falta quando três valores de uma proporção são conhecidos.',
+            'answer' => 'Na regra de três simples, se A está para B assim como C está para X, multiplique cruzado: X = B × C ÷ A. Exemplo: se 2 kg custam R$ 10, 5 kg custam 10 × 5 ÷ 2 = R$ 25.',
             'explainer' => <<<'HTML'
 <h2>Como fazer regra de três</h2>
 <p>Na regra de três direta as grandezas crescem juntas (mais quilos, mais dinheiro). Na inversa, uma cresce e a outra diminui (mais pedreiros, menos dias de obra).</p>
@@ -351,6 +461,29 @@ HTML,
 <div class="faq">
   <details><summary>Quando usar a mediana em vez da média?</summary><p>Quando há valores muito fora do padrão. A mediana é o valor do meio e não é puxada por extremos, como alguns salários muito altos.</p></details>
   <details><summary>E se nenhum número se repetir?</summary><p>Então não há moda: a moda é o valor que mais aparece na lista.</p></details>
+</div>
+HTML,
+        ],
+        'media-ponderada' => [
+            'name' => 'Média ponderada',
+            'seo_title' => 'Calculadora de Média Ponderada de Notas',
+            'symbol' => 'x̄p',
+            'category' => 'matematica',
+            'description' => 'Média com pesos e a nota que falta para passar.',
+            'keywords' => 'média ponderada nota peso prova escola faculdade média final quanto preciso tirar',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Calcule a média ponderada das suas notas e descubra quanto precisa tirar na próxima prova para passar.',
+            'explainer' => <<<'HTML'
+<h2>Como calcular a média ponderada</h2>
+<p>Multiplique cada nota pelo seu peso, some tudo e divida pela soma dos pesos. Notas com peso maior influenciam mais o resultado.</p>
+<p class="formula">média = (nota₁ × peso₁ + nota₂ × peso₂ + …) ÷ (peso₁ + peso₂ + …)</p>
+<p>Exemplo: 7,5 com peso 2, 6 com peso 3 e 8 com peso 5 → (15 + 18 + 40) ÷ 10 = 7,3.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Qual a diferença entre média simples e ponderada?</summary><p>Na média simples, todas as notas valem o mesmo. Na ponderada, cada nota tem um peso: uma prova com peso 3 conta três vezes mais que uma com peso 1.</p></details>
+  <details><summary>Como saber quanto preciso tirar na última prova?</summary><p>Informe a média para passar e o peso da prova que falta. A calculadora mostra a nota mínima: (média desejada × soma de todos os pesos − soma atual de nota × peso) ÷ peso da prova.</p></details>
+  <details><summary>Os pesos precisam somar 10 ou 100?</summary><p>Não. Os pesos podem ser quaisquer números; a conta divide pela soma deles. Pesos em porcentagem (30%, 70%) também funcionam.</p></details>
 </div>
 HTML,
         ],
@@ -449,6 +582,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Calcule seu índice de massa corporal e veja a classificação da Organização Mundial da Saúde.',
+            'answer' => 'O IMC é o peso dividido pela altura ao quadrado. De 18,5 a 24,9 é peso normal; de 25 a 29,9, sobrepeso; 30 ou mais, obesidade. Exemplo: 70 kg e 1,75 m → 70 ÷ (1,75 × 1,75) = IMC de 22,9, peso normal.',
             'explainer' => <<<'HTML'
 <h2>Como é calculado o IMC</h2>
 <p>O IMC divide o peso pela altura ao quadrado. É uma referência rápida, mas não diferencia músculo de gordura.</p>
@@ -628,6 +762,54 @@ HTML,
 </div>
 HTML,
         ],
+        'dias-ate-data' => [
+            'name' => 'Dias até uma data',
+            'seo_title' => 'Quantos Dias Faltam? Contagem Regressiva para uma Data',
+            'symbol' => '⏳',
+            'category' => 'datas',
+            'description' => 'Quantos dias faltam para uma data, com contagem regressiva.',
+            'keywords' => 'quantos dias faltam contagem regressiva natal ano novo carnaval black friday dia das mães dia dos pais',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Descubra quantos dias faltam para o Natal, o Carnaval, suas férias ou qualquer data, com dias úteis e contagem regressiva.',
+            'explainer' => <<<'HTML'
+<h2>Como é feita a contagem</h2>
+<p>A conta usa dias corridos de hoje até a data escolhida, sem contar o dia de hoje. Os dias úteis são de segunda a sexta, sem os feriados nacionais.</p>
+<p>Os atalhos (Natal, Ano-novo, Carnaval, Dia das Mães, Dia dos Pais e Black Friday) escolhem a próxima data desses eventos.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>O dia de hoje entra na conta?</summary><p>Não. Se a data é amanhã, falta 1 dia. A contagem regressiva em horas vai até a 0h do dia escolhido.</p></details>
+  <details><summary>Os feriados entram nos dias úteis?</summary><p>Os feriados nacionais são descontados. Feriados do seu estado ou cidade não entram; para eles, veja o calendário de feriados.</p></details>
+  <details><summary>Quando é a Black Friday?</summary><p>No Brasil, segue a data dos Estados Unidos: a sexta-feira depois da quarta quinta-feira de novembro.</p></details>
+</div>
+HTML,
+        ],
+        'signo-lunar' => [
+            'name' => 'Signo lunar e idade lunar',
+            'seo_title' => 'Calculadora de Signo Lunar e Idade Lunar',
+            'symbol' => '☾',
+            'category' => 'datas',
+            'description' => 'Signo da Lua, fase da Lua e idade lunar pela data de nascimento.',
+            'keywords' => 'signo lunar lua no nascimento mapa astral fase da lua idade lunar anos lunares signo solar',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Descubra seu signo lunar, a fase da Lua no dia em que você nasceu e sua idade em anos lunares.',
+            'explainer' => <<<'HTML'
+<h2>O que é o signo lunar</h2>
+<p>Na astrologia, o signo lunar é o signo em que a Lua estava no momento do nascimento. O signo solar, o mais conhecido, é o signo em que estava o Sol.</p>
+<p>A Lua passa cerca de 2 dias e meio em cada signo. Por isso a hora do nascimento importa: sem ela, a calculadora avisa quando a Lua trocou de signo naquele dia.</p>
+<h2>Idade lunar</h2>
+<p>Um ano lunar tem 12 lunações (de lua nova a lua nova), ou cerca de 354 dias: 11 dias a menos que o ano do calendário. Por isso a idade em anos lunares é um pouco maior que a idade comum.</p>
+<p class="formula">idade lunar = dias vividos ÷ 354,37</p>
+<p class="notice">A posição da Lua é calculada com fórmulas astronômicas simplificadas (erro de cerca de meio grau). Perto da troca de signo, confira num mapa astral completo. Astrologia não tem comprovação científica: use por curiosidade.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Preciso da hora de nascimento?</summary><p>Ajuda. A Lua anda cerca de 13° por dia; se ela trocou de signo no dia do seu nascimento, só a hora diz qual é o certo.</p></details>
+  <details><summary>Qual a diferença entre signo solar e lunar?</summary><p>O signo solar vem da posição do Sol e muda uma vez por mês. O lunar vem da posição da Lua e muda a cada 2 ou 3 dias.</p></details>
+  <details><summary>O que é a idade da Lua?</summary><p>É quantos dias se passaram desde a última lua nova. Perto de 0 é lua nova; perto de 15, lua cheia.</p></details>
+</div>
+HTML,
+        ],
         'dias-uteis' => [
             'name' => 'Dias úteis',
             'seo_title' => 'Calculadora de Dias Úteis Entre Datas com Feriados',
@@ -638,6 +820,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Conte os dias úteis entre duas datas, sem sábados, domingos e feriados nacionais.',
+            'answer' => 'Dias úteis são os dias de segunda a sexta-feira que não são feriado. Para contar, tire do período os sábados, os domingos e os feriados nacionais; feriados do seu estado ou cidade diminuem ainda mais a conta.',
             'explainer' => <<<'HTML'
 <h2>Feriados considerados</h2>
 <p>Confraternização Universal (1/1), Tiradentes (21/4), Dia do Trabalho (1/5), Independência (7/9), Nossa Senhora Aparecida (12/10), Finados (2/11), Proclamação da República (15/11), Consciência Negra (20/11), Natal (25/12) e Sexta-feira Santa.</p>
@@ -736,6 +919,51 @@ HTML,
 </div>
 HTML,
         ],
+        'quanto-posso-gastar' => [
+            'name' => 'Quanto posso gastar por mês?',
+            'seo_title' => 'Quanto Posso Gastar por Mês? Calculadora de Orçamento',
+            'symbol' => 'R$↓',
+            'category' => 'financas',
+            'description' => 'Quanto sobra para gastar por mês, semana e dia.',
+            'keywords' => 'orçamento pessoal regra 50 30 20 quanto posso gastar por dia controle financeiro planejamento',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Descubra quanto pode gastar por mês, por semana e por dia depois dos gastos fixos, das parcelas e do que quer guardar.',
+            'explainer' => <<<'HTML'
+<h2>Como a conta é feita</h2>
+<p>Da renda líquida saem os gastos fixos, as parcelas e o valor que você quer guardar. O que sobra é o que pode gastar livremente, dividido pelos dias até o próximo salário.</p>
+<p class="formula">livre = renda − gastos fixos − parcelas − guardar</p>
+<h2>Regra 50-30-20</h2>
+<p>Uma referência comum: 50% da renda para necessidades, 30% para desejos e 20% para guardar ou quitar dívidas. A tabela compara seu orçamento com ela.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Quanto da renda posso comprometer com parcelas?</summary><p>O recomendado é até 30% da renda líquida. Acima disso, qualquer imprevisto aperta o orçamento.</p></details>
+  <details><summary>Quanto devo guardar por mês?</summary><p>A regra 50-30-20 sugere 20%. Se não der, comece com 5% ou 10% e aumente aos poucos. O primeiro objetivo costuma ser uma reserva de emergência.</p></details>
+</div>
+HTML,
+        ],
+        'quanto-guardar-por-mes' => [
+            'name' => 'Quanto preciso guardar por mês?',
+            'seo_title' => 'Quanto Preciso Guardar por Mês para Atingir uma Meta',
+            'symbol' => 'R$↑',
+            'category' => 'financas',
+            'description' => 'Depósito mensal para juntar um valor no prazo, com juros.',
+            'keywords' => 'meta financeira juntar dinheiro poupar reserva de emergência objetivo quanto guardar por mês cdi poupança',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Calcule quanto precisa guardar por mês para juntar um valor no prazo que você quer, com o rendimento do CDI ou da poupança.',
+            'explainer' => <<<'HTML'
+<h2>Como é calculado</h2>
+<p>A calculadora acha o depósito mensal que, somado ao que você já tem e aos juros, chega à meta no fim do prazo. O rendimento anual vira mensal e entra como juros compostos.</p>
+<p class="formula">depósito = (meta − guardado × (1 + i)ⁿ) × i ÷ [(1 + i)ⁿ − 1]</p>
+<p class="notice">Simulação bruta: não desconta o Imposto de Renda de CDB e Tesouro. O rendimento do CDI e da poupança vem do Banco Central e pode mudar durante o prazo.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Quanto os juros ajudam?</summary><p>Em prazos curtos, pouco. Em prazos longos, bastante: os juros passam a render sobre os juros já ganhos. A calculadora mostra quanto seria sem rendimento, para comparar.</p></details>
+  <details><summary>Onde guardar o dinheiro da meta?</summary><p>Para metas de curto prazo e reserva de emergência, prefira investimentos com resgate rápido e baixo risco, como Tesouro Selic ou CDB com liquidez diária.</p></details>
+</div>
+HTML,
+        ],
         'investimentos' => [
             'name' => 'CDB, LCI, Tesouro ou poupança',
             'seo_title' => 'CDB, LCI/LCA, Tesouro Selic ou Poupança: Qual Rende Mais?',
@@ -746,6 +974,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-10-01',
             'lead' => 'Compare quanto seu dinheiro rende, já descontando o imposto de renda, em CDB, LCI/LCA, Tesouro Selic e poupança.',
+            'answer' => 'O que rende mais depende do prazo e do imposto: CDB e Tesouro Selic pagam IR de 22,5% a 15%, menor quanto mais tempo o dinheiro fica aplicado; LCI, LCA e poupança são isentas. Com taxas parecidas, LCI e LCA sem IR costumam render mais que o CDB.',
             'explainer' => <<<'HTML'
 <h2>Como a comparação é feita</h2>
 <p>Cada depósito (o valor inicial e cada aporte mensal) rende pelo tempo em que ficou aplicado. No fim, a calculadora desconta o imposto de renda de cada um pela tabela regressiva e mostra o valor líquido para resgatar.</p>
@@ -785,6 +1014,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-10-01',
             'lead' => 'Calcule quanto vai ter no FGTS daqui a alguns meses e quanto receberia numa demissão sem justa causa, com a multa de 40%.',
+            'answer' => 'A empresa deposita todo mês 8% do salário bruto no FGTS, que rende 3% ao ano mais a TR. Na demissão sem justa causa, você saca o saldo e recebe multa de 40% sobre o total depositado no contrato. Exemplo: salário de R$ 3.000 gera R$ 240 de depósito por mês.',
             'explainer' => <<<'HTML'
 <h2>Como o FGTS é calculado</h2>
 <p>Todo mês a empresa deposita <b>8% do salário bruto</b> na sua conta do FGTS (2% para jovem aprendiz). Esse valor não é descontado do seu salário. Também há depósito sobre o 13º e sobre o 1/3 de férias.</p>
@@ -810,6 +1040,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-10-01',
             'lead' => 'Descubra quanto você pode sacar por ano no saque-aniversário do FGTS, pela tabela oficial, e até quando pode retirar.',
+            'answer' => 'No saque-aniversário você retira todo ano uma parte do saldo do FGTS no mês do seu aniversário: 50% para saldos até R$ 500 e uma porcentagem menor mais uma parcela fixa nas faixas acima, até 5% + R$ 2.900 para saldos acima de R$ 20.000. Se for demitido, recebe só a multa de 40%, não o saldo.',
             'explainer' => <<<'HTML'
 <h2>Tabela do saque-aniversário</h2>
 <p>O valor é uma porcentagem do saldo total do FGTS (todas as contas somadas) mais uma parcela adicional fixa:</p>
@@ -848,6 +1079,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Informe um valor, escolha o índice (IPCA, IGP-M, INPC, IGP-DI, Selic, CDI ou poupança) e o período: veja o valor corrigido, a variação acumulada e o mês a mês.',
+            'answer' => 'Para corrigir um valor, multiplique-o pela variação acumulada do índice no período (IPCA, IGP-M, INPC, Selic...). A variação acumulada é composta: (1 + taxa do 1º mês) × (1 + taxa do 2º mês) × ... − 1.',
             'explainer' => <<<'HTML'
 <h2>Como funciona a correção monetária</h2>
 <p>A correção aplica, mês a mês, a variação do índice escolhido sobre o valor. A conta é composta: a variação de cada mês incide sobre o valor já corrigido nos meses anteriores.</p>
@@ -967,6 +1199,7 @@ HTML,
             'ready' => true,
             'reviewed' => '2026-09-30',
             'lead' => 'Descubra quanto você ganha por hora trabalhada, converta o valor da hora em salário mensal ou calcule quanto cobrar por hora como freelancer.',
+            'answer' => 'O valor da hora é o salário mensal dividido pela jornada do mês: 220 horas para quem trabalha 44 horas por semana, 200 horas para 40 horas semanais. Exemplo: R$ 3.000 ÷ 220 = R$ 13,64 por hora.',
             'explainer' => <<<'HTML'
 <h2>Como calcular o valor da hora</h2>
 <p>Divida o salário mensal pela jornada mensal. Quem trabalha 44 horas por semana tem jornada mensal de 220 horas; 40 horas por semana dão 200 horas.</p>
@@ -1338,6 +1571,28 @@ HTML,
   <details><summary>O link expira?</summary><p>Não. O link wa.me funciona enquanto o número tiver WhatsApp. Se mudar a mensagem, gere um link novo.</p></details>
   <details><summary>Funciona com WhatsApp Business e telefone fixo?</summary><p>Sim. Números fixos com WhatsApp Business funcionam do mesmo jeito: informe o DDD e os 8 dígitos do telefone.</p></details>
   <details><summary>O número que eu digito fica salvo no site?</summary><p>Não. O link e o QR Code são gerados no seu navegador.</p></details>
+</div>
+HTML,
+        ],
+        'encurtador-url' => [
+            'name' => 'Encurtador de URL',
+            'seo_title' => 'Encurtador de URL Grátis: Link Curto sem Cadastro',
+            'symbol' => '🔗',
+            'category' => 'texto',
+            'description' => 'Transforma um link longo em um link curto.',
+            'keywords' => 'encurtar link url curta encurtador grátis link curto sem cadastro',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Cole um link longo e receba um link curto para compartilhar no WhatsApp, nas redes sociais ou em materiais impressos. Grátis e sem cadastro.',
+            'explainer' => <<<'HTML'
+<h2>Como funciona</h2>
+<p>O link curto fica no endereço do Vibe2000 e leva direto para o link original. O mesmo endereço longo sempre gera o mesmo link curto.</p>
+<p class="notice">Links usados para golpes, spam ou conteúdo ilegal são apagados sem aviso.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>O link curto expira?</summary><p>Não. Ele continua funcionando, a não ser que seja apagado por uso indevido.</p></details>
+  <details><summary>Preciso de cadastro?</summary><p>Não. É só colar o link e encurtar. Por isso não é possível editar o destino depois: para outro destino, gere um link novo.</p></details>
+  <details><summary>Posso encurtar qualquer link?</summary><p>Qualquer endereço que comece com http:// ou https://. Se você colar sem isso, a calculadora completa com https://.</p></details>
 </div>
 HTML,
         ],

@@ -3,16 +3,16 @@
 // Páginas: busca na internet primeiro e guarda uma cópia; sem internet, abre a cópia
 // (as calculadoras funcionam offline, porque a conta é feita no navegador).
 // CSS, JS e imagens: usa a cópia guardada (o endereço muda a cada versão: ?v=...).
-// Nunca guarda: painel, API do contador de visitas, formulários (POST) e outros sites.
+// Nunca guarda: painel, APIs, links curtos (/l/), formulários (POST) e outros sites.
 //
 // Mudou a lógica deste arquivo? Aumente o CACHE_VERSION para apagar os caches antigos.
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const PAGES_CACHE = `vibe2000-pages-${CACHE_VERSION}`;
 const ASSETS_CACHE = `vibe2000-assets-${CACHE_VERSION}`;
 const OFFLINE_PAGE = "/offline.html";
 const MAX_SAVED_PAGES = 40;
-const NEVER_CACHE = /^\/(painel|api\/|sitemap\.xml|robots\.txt|sw\.js|sw-painel\.js)/;
+const NEVER_CACHE = /^\/(painel|api\/|l\/|sitemap\.xml|robots\.txt|sw\.js|sw-painel\.js)/;
 const STATIC_FILES = /^\/(assets\/|icons\/|favicon\.svg|manifest\.webmanifest)/;
 
 self.addEventListener("install", (installEvent) => {

@@ -10,6 +10,7 @@ use App\Controllers\AdminController;
 use App\Controllers\FipeController;
 use App\Controllers\HolidayController;
 use App\Controllers\IndicatorsController;
+use App\Controllers\ShortLinkController;
 use App\Controllers\SiteController;
 use App\Controllers\TripController;
 use App\Controllers\VisitController;
@@ -45,6 +46,10 @@ $router->get('/feriados/{year}/{state}', [HolidayController::class, 'state']);
 $router->get('/feriados/{year}/{state}/agenda', [HolidayController::class, 'stateAgenda']);
 $router->get('/sitemap.xml', [SiteController::class, 'sitemap']);
 $router->get('/robots.txt', [SiteController::class, 'robots']);
+
+// Encurtador de URL
+$router->post('/api/encurtar', [ShortLinkController::class, 'create']);
+$router->get('/l/{code}', [ShortLinkController::class, 'open']);
 
 // Contador de visitas
 $router->post('/api/visita', [VisitController::class, 'track']);
