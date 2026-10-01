@@ -575,6 +575,171 @@
       },
     },
 
+    "correcao-monetaria": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="correction-amount">Valor (R$)</label><input id="correction-amount" inputmode="numeric" data-money value="1.000,00"></div>
+            <div class="field"><label for="correction-index">Índice</label><select id="correction-index">
+              <option value="ipca">IPCA · inflação oficial</option>
+              <option value="igpm">IGP-M · aluguel</option>
+              <option value="inpc">INPC · salários e INSS</option>
+              <option value="igpdi">IGP-DI · contratos</option>
+              <option value="selic">Selic · juros básicos</option>
+              <option value="cdi">CDI · renda fixa</option>
+              <option value="poupanca">Poupança</option>
+            </select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="correction-start">Mês inicial</label><input id="correction-start" type="month" placeholder="aaaa-mm"></div>
+            <div class="field"><label for="correction-end">Mês final</label><input id="correction-end" type="month" placeholder="aaaa-mm"></div>
+          </div>
+          <div class="button-row" id="correction-shortcuts">
+            <button type="button" class="secondary-button" data-months="12">Últimos 12 meses</button>
+            <button type="button" class="secondary-button" data-months="24">24 meses</button>
+            <button type="button" class="secondary-button" data-months="60">5 anos</button>
+          </div>
+          <span class="field-hint" id="correction-availability">Carregando o índice…</span>
+        </div>
+        <div id="correction-result"></div>
+        <div class="calculator-body" id="correction-details" hidden></div>`,
+      setup() {
+        const MONTH_NAMES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+        const indexSelect = document.getElementById("correction-index");
+        const startInput = document.getElementById("correction-start");
+        const endInput = document.getElementById("correction-end");
+        const resultBox = document.getElementById("correction-result");
+        const detailsBox = document.getElementById("correction-details");
+        const availability = document.getElementById("correction-availability");
+        const seriesCache = {}; // índices já baixados nesta visita
+        let series = null;
+        // "Últimos N meses": ao trocar de índice, o período acompanha o último mês divulgado do novo índice.
+        // Se a pessoa digitar os meses, eles ficam como estão.
+        let followLatest = 0;
+        // "pelo IPCA", "pela Selic", "pela poupança"
+        const byIndex = (indexKey, name) => ({ selic: "pela Selic", poupanca: "pela poupança" }[indexKey] || `pelo ${name}`);
+
+        const monthLabel = (month) => `${MONTH_NAMES[Number(month.slice(5, 7)) - 1]}/${month.slice(0, 4)}`;
+        const shiftMonth = (month, delta) => {
+          const date = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + delta, 1);
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        };
+        const percent = (rate) => `${rate > 0 ? "+" : ""}${formatNumber(rate * 100, 2)}%`;
+
+        function setPeriod(monthCount) {
+          followLatest = monthCount;
+          const last = series.months[series.months.length - 1][0];
+          endInput.value = last;
+          startInput.value = shiftMonth(last, -(monthCount - 1));
+          calculate();
+        }
+
+        async function loadIndex() {
+          const indexKey = indexSelect.value;
+          availability.textContent = "Carregando o índice…";
+          resultBox.innerHTML = emptyDisplay("Valor corrigido", "Carregando o índice do Banco Central…");
+          detailsBox.hidden = true;
+          try {
+            if (!seriesCache[indexKey]) {
+              const response = await fetch(`/api/indices/serie?${new URLSearchParams({ indice: indexKey })}`, { headers: { Accept: "application/json" }, credentials: "same-origin" });
+              const data = await response.json().catch(() => ({}));
+              if (!response.ok) {
+                throw new Error(data.error || "O Banco Central não respondeu agora.");
+              }
+              seriesCache[indexKey] = data;
+            }
+          } catch (error) {
+            series = null;
+            availability.textContent = "";
+            resultBox.innerHTML = emptyDisplay("Valor corrigido", escapeHtml(error.message));
+            return;
+          }
+          if (indexSelect.value !== indexKey) {
+            return; // a pessoa já escolheu outro índice
+          }
+          series = seriesCache[indexKey];
+          const first = series.months[0][0];
+          const last = series.months[series.months.length - 1][0];
+          startInput.min = endInput.min = first;
+          startInput.max = endInput.max = last;
+          availability.textContent = `${series.name}: ${series.description}. Dados de ${monthLabel(first)} a ${monthLabel(last)} (Banco Central).`;
+          // Primeira vez ou período fora do que existe para este índice: últimos 12 meses
+          if (followLatest || !startInput.value || !endInput.value || startInput.value < first || endInput.value > last) {
+            setPeriod(followLatest || 12);
+          } else {
+            calculate();
+          }
+        }
+
+        function calculate() {
+          if (!series) {
+            return;
+          }
+          const amount = parseNumber(document.getElementById("correction-amount").value);
+          let start = startInput.value;
+          let end = endInput.value;
+          if (!(amount > 0) || !/^\d{4}-\d{2}$/.test(start) || !/^\d{4}-\d{2}$/.test(end)) {
+            resultBox.innerHTML = emptyDisplay("Valor corrigido", "Informe o valor e os meses inicial e final.");
+            detailsBox.hidden = true;
+            return;
+          }
+          if (start > end) {
+            [start, end] = [end, start];
+          }
+          // Variações do mês inicial ao mês final (os dois entram na conta)
+          const months = series.months.filter(([month]) => month >= start && month <= end);
+          if (months.length === 0) {
+            resultBox.innerHTML = emptyDisplay("Valor corrigido", `Não há dados do ${escapeHtml(series.name)} nesse período.`);
+            detailsBox.hidden = true;
+            return;
+          }
+          const factor = months.reduce((product, [, rate]) => product * (1 + rate / 100), 1);
+          const corrected = amount * factor;
+          const realStart = months[0][0];
+          const realEnd = months[months.length - 1][0];
+          const averageMonthly = Math.pow(factor, 1 / months.length) - 1;
+          const cutNote = realEnd < end ? ` (os meses depois de ${monthLabel(realEnd)} ainda não foram divulgados)` : "";
+          resultBox.innerHTML = display("Valor corrigido", formatMoney(corrected), `${formatMoney(amount)} corrigido ${escapeHtml(byIndex(indexSelect.value, series.name))} de ${monthLabel(realStart)} a ${monthLabel(realEnd)} · ${months.length} ${months.length === 1 ? "mês" : "meses"}${cutNote}`, [
+            ["Variação acumulada", percent(factor - 1)],
+            [corrected >= amount ? "Aumento" : "Redução", formatMoney(Math.abs(corrected - amount))],
+            ["Média por mês", percent(averageMonthly)],
+            ["Fator de correção", formatNumber(factor, 6)],
+          ]);
+
+          // Ano a ano dentro do período escolhido
+          const byYear = new Map();
+          months.forEach(([month, rate]) => {
+            const year = month.slice(0, 4);
+            byYear.set(year, (byYear.get(year) || 1) * (1 + rate / 100));
+          });
+          let runningValue = amount;
+          const yearRows = [...byYear].map(([year, yearFactor]) => {
+            runningValue *= yearFactor;
+            const count = months.filter(([month]) => month.startsWith(year)).length;
+            return `<tr><td>${year}${count < 12 ? ` <small>(${count} ${count === 1 ? "mês" : "meses"})</small>` : ""}</td><td>${percent(yearFactor - 1)}</td><td>${formatMoney(runningValue)}</td></tr>`;
+          }).join("");
+          const monthRows = months.map(([month, rate]) => `<tr><td>${monthLabel(month)}</td><td>${formatNumber(rate, 2)}%</td></tr>`).join("");
+          detailsBox.hidden = false;
+          detailsBox.innerHTML = `<h3>Ano a ano</h3>
+            <table class="data-table payslip"><thead><tr><th>Ano</th><th>Variação</th><th>Valor no fim do ano</th></tr></thead><tbody>${yearRows}</tbody></table>
+            <details class="correction-months"><summary>Ver a variação de cada mês (${months.length})</summary>
+              <table class="data-table payslip"><thead><tr><th>Mês</th><th>${escapeHtml(series.name)}</th></tr></thead><tbody>${monthRows}</tbody></table>
+            </details>
+            <p class="notice">Correção composta (juros sobre juros), incluindo a variação do mês inicial e do mês final. Em contratos de aluguel, o reajuste anual costuma usar o acumulado de 12 meses do índice do contrato divulgado antes do aniversário. Fonte: Banco Central (SGS).</p>`;
+        }
+
+        indexSelect.addEventListener("change", loadIndex);
+        document.getElementById("correction-shortcuts").addEventListener("click", (clickEvent) => {
+          const button = clickEvent.target.closest("[data-months]");
+          if (button && series) {
+            setPeriod(Number(button.dataset.months));
+          }
+        });
+        document.getElementById("correction-amount").addEventListener("input", calculate);
+        [startInput, endInput].forEach((input) => input.addEventListener("input", () => { followLatest = 0; calculate(); }));
+        loadIndex();
+      },
+    },
+
     "financiamento": {
       html: `        <div class="calculator-body">
           <div class="field-row">
@@ -2031,7 +2196,29 @@
     },
 
     "depreciacao-veiculo": {
-      html: `        <div class="calculator-body">
+      html: `        <div class="calculator-body depreciation-modes-row">
+          <div class="segmented" id="depreciation-modes" role="group" aria-label="Como calcular">
+            <button type="button" data-value="fipe" aria-pressed="true">Consultar a FIPE (histórico real)</button>
+            <button type="button" data-value="estimate" aria-pressed="false">Estimar o futuro</button>
+          </div>
+        </div>
+        <div id="depreciation-fipe">
+          <div class="calculator-body">
+            <div class="field-row">
+              <div class="field"><label for="fipe-type">Veículo</label><select id="fipe-type"><option value="1">Carro</option><option value="2">Moto</option><option value="3">Caminhão</option></select></div>
+              <div class="field"><label for="fipe-brand">Marca</label><select id="fipe-brand" disabled><option>carregando…</option></select></div>
+            </div>
+            <div class="field"><label for="fipe-model-filter">Modelo</label><input id="fipe-model-filter" placeholder="Digite para filtrar (ex.: Gol 1.0)" autocomplete="off" disabled><select id="fipe-model" disabled><option value="">Escolha a marca primeiro</option></select></div>
+            <div class="field-row">
+              <div class="field"><label for="fipe-year">Ano do modelo</label><select id="fipe-year" disabled><option value="">Escolha o modelo primeiro</option></select></div>
+            </div>
+            <span class="field-hint">Valores da Tabela FIPE no mesmo mês de cada um dos últimos 5 anos.</span>
+          </div>
+          <div id="fipe-result"></div>
+          <div class="calculator-body" id="fipe-details" hidden></div>
+        </div>
+        <div id="depreciation-estimate" hidden>
+        <div class="calculator-body">
           <div class="field-row">
             <div class="field"><label for="depreciation-value">Valor atual na FIPE (R$)</label><input id="depreciation-value" inputmode="numeric" data-money value="80.000,00"></div>
             <div class="field"><label for="depreciation-category">Categoria</label><select id="depreciation-category"></select></div>
@@ -2044,7 +2231,8 @@
           <span class="field-hint">Os percentuais são médias aproximadas do mercado para cada categoria e podem ser ajustados.</span>
         </div>
         <div id="depreciation-result"></div>
-        <div class="calculator-body" id="depreciation-table"></div>`,
+        <div class="calculator-body" id="depreciation-table"></div>
+        </div>`,
       setup() {
         // Médias aproximadas de desvalorização no Brasil (estimativas; modelos específicos variam bastante)
         const CATEGORIES = {
@@ -2101,6 +2289,228 @@
         categorySelect.addEventListener("change", () => { fillCategoryRates(); calculate(); });
         fillCategoryRates();
         onInputs(["depreciation-value", "depreciation-first", "depreciation-yearly", "depreciation-new"], calculate);
+
+        /* ---------- Aba "Consultar a FIPE": histórico real dos últimos 5 anos ---------- */
+        // Chart.js só carrega quando o gráfico for desenhado (cdnjs, com verificação de integridade)
+        const CHART_JS = ["https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js", "sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw=="];
+        let chartJsPromise = null;
+        let chart = null;
+        function loadChartJs() {
+          if (!chartJsPromise) {
+            chartJsPromise = window.Chart ? Promise.resolve(window.Chart) : new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              Object.assign(script, { src: CHART_JS[0], integrity: CHART_JS[1], crossOrigin: "anonymous" });
+              script.onload = () => resolve(window.Chart);
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+          return chartJsPromise;
+        }
+
+        const typeSelect = document.getElementById("fipe-type");
+        const brandSelect = document.getElementById("fipe-brand");
+        const modelFilter = document.getElementById("fipe-model-filter");
+        const modelSelect = document.getElementById("fipe-model");
+        const yearSelect = document.getElementById("fipe-year");
+        const fipeResult = document.getElementById("fipe-result");
+        const fipeDetails = document.getElementById("fipe-details");
+        let allModels = [];
+        let requestNumber = 0; // evita que uma resposta antiga apareça depois de uma escolha nova
+
+        async function fetchFipe(path, params) {
+          const response = await fetch(`/api/fipe/${path}?${new URLSearchParams(params)}`, { headers: { Accept: "application/json" }, credentials: "same-origin" });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(data.error || "A Tabela FIPE não respondeu agora.");
+          }
+          return data;
+        }
+        function fillSelect(select, items, placeholder) {
+          select.innerHTML = `<option value="">${placeholder}</option>` + items.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join("");
+          select.disabled = items.length === 0;
+        }
+        function resetBelow(level) {
+          if (level <= 1) {
+            allModels = [];
+            fillSelect(modelSelect, [], "Escolha a marca primeiro");
+            modelFilter.value = "";
+            modelFilter.disabled = true;
+          }
+          if (level <= 2) {
+            fillSelect(yearSelect, [], "Escolha o modelo primeiro");
+          }
+          fipeResult.innerHTML = emptyDisplay("Desvalorização na FIPE", "Escolha marca, modelo e ano.");
+          fipeDetails.hidden = true;
+        }
+        function showFipeError(message) {
+          fipeResult.innerHTML = emptyDisplay("Desvalorização na FIPE", escapeHtml(message) + " Você pode usar a aba \"Estimar o futuro\".");
+          fipeDetails.hidden = true;
+        }
+
+        async function loadBrands() {
+          const thisRequest = ++requestNumber;
+          brandSelect.disabled = true;
+          brandSelect.innerHTML = "<option>carregando…</option>";
+          resetBelow(1);
+          try {
+            const data = await fetchFipe("marcas", { tipo: typeSelect.value });
+            if (thisRequest === requestNumber) {
+              fillSelect(brandSelect, data.items, "Escolha a marca");
+            }
+          } catch (error) {
+            brandSelect.innerHTML = "<option>indisponível</option>";
+            showFipeError(error.message);
+          }
+        }
+        async function loadModels() {
+          resetBelow(1);
+          if (!brandSelect.value) {
+            return;
+          }
+          const thisRequest = ++requestNumber;
+          modelSelect.innerHTML = "<option>carregando…</option>";
+          try {
+            const data = await fetchFipe("modelos", { tipo: typeSelect.value, marca: brandSelect.value });
+            if (thisRequest === requestNumber) {
+              allModels = data.items;
+              fillSelect(modelSelect, allModels, `Escolha o modelo (${allModels.length})`);
+              modelFilter.disabled = false;
+            }
+          } catch (error) {
+            showFipeError(error.message);
+          }
+        }
+        // Filtro do modelo: as marcas têm centenas de versões
+        function filterModels() {
+          const words = normalizeText(modelFilter.value).split(/\s+/).filter(Boolean);
+          const matches = allModels.filter((item) => words.every((word) => normalizeText(item.label).includes(word)));
+          fillSelect(modelSelect, matches, matches.length ? `Escolha o modelo (${matches.length})` : "Nenhum modelo com esse nome");
+          resetBelow(2);
+        }
+        async function loadYears() {
+          resetBelow(2);
+          if (!modelSelect.value) {
+            return;
+          }
+          const thisRequest = ++requestNumber;
+          yearSelect.innerHTML = "<option>carregando…</option>";
+          try {
+            const data = await fetchFipe("anos", { tipo: typeSelect.value, marca: brandSelect.value, modelo: modelSelect.value });
+            if (thisRequest === requestNumber) {
+              const items = data.items.map((item) => ({ ...item, label: item.value.startsWith("32000") ? "Zero km" : item.label }));
+              fillSelect(yearSelect, items, "Escolha o ano");
+            }
+          } catch (error) {
+            showFipeError(error.message);
+          }
+        }
+
+        async function loadHistory() {
+          fipeDetails.hidden = true;
+          if (!yearSelect.value) {
+            return;
+          }
+          const thisRequest = ++requestNumber;
+          fipeResult.innerHTML = emptyDisplay("Desvalorização na FIPE", "Consultando a Tabela FIPE dos últimos 5 anos…");
+          window.Vibe2000?.registerToolUse("depreciacao-veiculo");
+          let history;
+          try {
+            history = await fetchFipe("historico", { tipo: typeSelect.value, marca: brandSelect.value, modelo: modelSelect.value, ano: yearSelect.value });
+          } catch (error) {
+            if (thisRequest === requestNumber) {
+              showFipeError(error.message);
+            }
+            return;
+          }
+          if (thisRequest !== requestNumber) {
+            return;
+          }
+          showHistory(history);
+        }
+
+        function showHistory({ vehicle, points }) {
+          const first = points[0];
+          const last = points[points.length - 1];
+          const years = points.length - 1;
+          const vehicleLabel = `${vehicle.brand} ${vehicle.model} · ${vehicle.year}${vehicle.fuel ? " " + vehicle.fuel : ""}`;
+          if (years < 1) {
+            fipeResult.innerHTML = display("Valor na FIPE hoje", formatMoney(last.price), `${escapeHtml(vehicleLabel)} · ainda não há 1 ano de histórico na tabela`);
+            fipeDetails.hidden = true;
+            return;
+          }
+          const totalChange = last.price / first.price - 1;
+          // Variação média por ano (composta): quanto o valor mudou, em média, a cada ano
+          const yearlyChange = Math.pow(last.price / first.price, 1 / years) - 1;
+          const lostValue = totalChange < 0;
+          const percent = (rate) => `${rate > 0 ? "+" : ""}${formatNumber(rate * 100, 1)}%`;
+          fipeResult.innerHTML = display(
+            lostValue ? `Desvalorizou em ${years} ${years === 1 ? "ano" : "anos"}` : `Valorizou em ${years} ${years === 1 ? "ano" : "anos"}`,
+            percent(totalChange),
+            `${escapeHtml(vehicleLabel)}${vehicle.fipeCode ? " · FIPE " + escapeHtml(vehicle.fipeCode) : ""}`,
+            [
+              ["Valor hoje", formatMoney(last.price)],
+              [`Em ${escapeHtml(first.month)}`, formatMoney(first.price)],
+              [lostValue ? "Perdeu" : "Ganhou", formatMoney(Math.abs(last.price - first.price))],
+              ["Média por ano", percent(yearlyChange)],
+            ],
+          );
+
+          const rows = points.map((point, index) => {
+            const previous = points[index - 1];
+            const change = previous ? point.price / previous.price - 1 : null;
+            const changeHtml = change === null ? "—" : `<span class="change ${change < -0.0005 ? "is-down" : change > 0.0005 ? "is-up" : "is-flat"}">${change < 0 ? "▼" : change > 0 ? "▲" : "●"} ${percent(change)}</span>`;
+            return `<tr><td>${escapeHtml(point.month)}</td><td>${formatMoney(point.price)}</td><td>${changeHtml}</td></tr>`;
+          }).join("");
+          fipeDetails.hidden = false;
+          fipeDetails.innerHTML = `<h3>Valor na Tabela FIPE ano a ano</h3>
+            <div class="fipe-chart"><canvas id="fipe-chart" aria-label="Gráfico do valor na Tabela FIPE nos últimos anos" role="img"></canvas></div>
+            <table class="data-table payslip"><thead><tr><th>Mês de referência</th><th>Valor</th><th>Variação no ano</th></tr></thead><tbody>${rows}</tbody></table>
+            <p class="notice">Fonte: Tabela FIPE (Fundação Instituto de Pesquisas Econômicas), preço médio de mercado. O valor de venda real depende de quilometragem, conservação e região. Quer projetar os próximos anos? Use a aba "Estimar o futuro".</p>`;
+          drawChart(points);
+        }
+
+        async function drawChart(points) {
+          let ChartLibrary;
+          try {
+            ChartLibrary = await loadChartJs();
+          } catch {
+            document.querySelector(".fipe-chart")?.remove(); // sem gráfico, a tabela continua
+            return;
+          }
+          const canvas = document.getElementById("fipe-chart");
+          if (!canvas) {
+            return;
+          }
+          chart?.destroy();
+          chart = new ChartLibrary(canvas, {
+            type: "line",
+            data: {
+              labels: points.map((point) => point.month.replace(/^(\w{3})\w*\/(\d{4})$/, "$1/$2")),
+              datasets: [{ data: points.map((point) => point.price), borderColor: "#0e6b4f", backgroundColor: "rgba(14, 107, 79, 0.12)", fill: true, tension: 0.25, pointRadius: 5, pointBackgroundColor: "#0e6b4f" }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => formatMoney(context.parsed.y) } } },
+              scales: { y: { ticks: { callback: (value) => "R$ " + formatNumber(value / 1000, 0) + " mil" } } },
+            },
+          });
+        }
+
+        typeSelect.addEventListener("change", loadBrands);
+        brandSelect.addEventListener("change", loadModels);
+        modelFilter.addEventListener("input", filterModels);
+        modelSelect.addEventListener("change", loadYears);
+        yearSelect.addEventListener("change", loadHistory);
+
+        // Abas: FIPE (histórico real) ou estimativa por categoria
+        setupSegmented("depreciation-modes", (mode) => {
+          document.getElementById("depreciation-fipe").hidden = mode !== "fipe";
+          document.getElementById("depreciation-estimate").hidden = mode !== "estimate";
+        });
+        resetBelow(1);
+        loadBrands();
       },
     },
 
@@ -2190,6 +2600,218 @@
             <p class="notice">Não aceite corridas que paguem menos que o custo por km. Os custos fixos por km caem quando você roda mais. Estimativa: não inclui multas, estacionamento, alimentação, celular nem impostos sobre a renda.</p>`;
         }
         onInputs(fieldIds, calculate);
+      },
+    },
+
+    "custo-de-viagem": {
+      html: `        <form class="calculator-body" id="trip-form" novalidate>
+          <div class="field-row">
+            <div class="field"><label for="trip-origin">Saindo de</label><input id="trip-origin" autocomplete="street-address" placeholder="Ex.: Av. Paulista, São Paulo, SP" maxlength="150" value="São Paulo, SP"></div>
+            <div class="field"><label for="trip-destination">Indo para</label><input id="trip-destination" autocomplete="off" placeholder="Ex.: Santos, SP" maxlength="150" value="Santos, SP"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="trip-fuel-price">Preço do litro (R$)</label><input id="trip-fuel-price" inputmode="numeric" data-money value="6,19"></div>
+            <div class="field"><label for="trip-efficiency">Consumo (km por litro)</label><input id="trip-efficiency" inputmode="decimal" value="12"></div>
+            <div class="field"><label for="trip-people">Dividir entre (pessoas)</label><input id="trip-people" type="number" min="1" max="20" value="1"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="trip-round"> Ida e volta</label>
+          <button type="submit" class="action-button" id="trip-submit">Calcular viagem</button>
+          <span class="field-hint">Rota e mapa: Inclua cidade e estado para achar o endereço certo.</span>
+        </form>
+        <div id="trip-result"></div>
+        <div class="trip-map" id="trip-map" hidden></div>
+        <div class="calculator-body" id="trip-tolls" hidden></div>`,
+      setup() {
+        // Leaflet (mapa) só carrega nesta página, do cdnjs, com verificação de integridade (SRI)
+        const LEAFLET = {
+          css: ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css", "sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="],
+          js: ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js", "sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="],
+        };
+        let leafletPromise = null;
+        function loadLeaflet() {
+          if (!leafletPromise) {
+            leafletPromise = new Promise((resolve, reject) => {
+              const style = document.createElement("link");
+              Object.assign(style, { rel: "stylesheet", href: LEAFLET.css[0], integrity: LEAFLET.css[1], crossOrigin: "anonymous" });
+              document.head.appendChild(style);
+              const script = document.createElement("script");
+              Object.assign(script, { src: LEAFLET.js[0], integrity: LEAFLET.js[1], crossOrigin: "anonymous" });
+              script.onload = () => resolve(window.L);
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+          return leafletPromise;
+        }
+
+        const form = document.getElementById("trip-form");
+        const resultBox = document.getElementById("trip-result");
+        const mapBox = document.getElementById("trip-map");
+        const tollsBox = document.getElementById("trip-tolls");
+        const submitButton = document.getElementById("trip-submit");
+        let trip = null;      // última rota calculada (vem do servidor)
+        let tolls = null;     // praças de pedágio (chegam depois da rota); null = ainda buscando ou indisponível
+        let tollsStatus = ""; // "loading" | "ready" | "unavailable"
+        let map = null;
+        let mapLayers = [];
+
+        function formatDuration(totalSeconds) {
+          const totalMinutes = Math.round(totalSeconds / 60);
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+          return hours > 0 ? `${hours} h ${String(minutes).padStart(2, "0")} min` : `${minutes} min`;
+        }
+
+        // Custos: recalculados na hora quando muda preço, consumo, ida e volta ou pessoas (sem nova consulta)
+        function showCosts() {
+          if (!trip) {
+            return;
+          }
+          const fuelPrice = parseNumber(document.getElementById("trip-fuel-price").value);
+          const efficiency = parseNumber(document.getElementById("trip-efficiency").value);
+          const people = Math.max(1, parseInt(document.getElementById("trip-people").value, 10) || 1);
+          const trips = document.getElementById("trip-round").checked ? 2 : 1;
+          const kilometers = (trip.distanceMeters / 1000) * trips;
+          const routeLabel = `${escapeHtml(trip.origin.label)} → ${escapeHtml(trip.destination.label)}${trips === 2 ? " (ida e volta)" : ""}`;
+          if (!(fuelPrice > 0) || !(efficiency > 0)) {
+            resultBox.innerHTML = emptyDisplay("Custo da viagem", "Informe o preço do litro e o consumo do carro.");
+            return;
+          }
+          const liters = kilometers / efficiency;
+          const fuelCost = liters * fuelPrice;
+          const pricedTolls = (tolls || []).filter((toll) => toll.price !== null);
+          const tollCost = pricedTolls.reduce((sum, toll) => sum + toll.price, 0) * trips;
+          const total = fuelCost + tollCost;
+          let tollText = "buscando…";
+          if (tollsStatus === "unavailable") {
+            tollText = "indisponível";
+          } else if (tollsStatus === "ready") {
+            tollText = tolls.length === 0 ? "nenhum" : formatMoney(tollCost) + (pricedTolls.length < tolls.length ? "*" : "");
+          }
+          const gridItems = [
+            ["Distância", `${formatNumber(kilometers, 1)} km`],
+            ["Tempo ao volante", formatDuration(trip.durationSeconds * trips)],
+            ["Combustível", `${formatNumber(liters, 1)} L · ${formatMoney(fuelCost)}`],
+            ["Pedágios", tollText],
+          ];
+          if (people > 1) {
+            gridItems.push(["Por pessoa", formatMoney(total / people)]);
+          }
+          resultBox.innerHTML = display(tollsStatus === "ready" && tollCost > 0 ? "Custo da viagem (combustível + pedágios)" : "Custo da viagem (combustível)", formatMoney(total), routeLabel, gridItems);
+        }
+
+        async function drawMap() {
+          mapBox.hidden = false;
+          let leaflet;
+          try {
+            leaflet = await loadLeaflet();
+          } catch {
+            mapBox.innerHTML = '<p class="trip-map-error">Não foi possível carregar o mapa agora. Os valores acima continuam valendo.</p>';
+            return;
+          }
+          if (!map) {
+            map = leaflet.map(mapBox, { scrollWheelZoom: false });
+            leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              maxZoom: 19,
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+            }).addTo(map);
+          }
+          mapLayers.forEach((layer) => layer.remove());
+          const line = leaflet.polyline(trip.path, { color: "#0e6b4f", weight: 5, opacity: 0.85 });
+          const start = leaflet.circleMarker(trip.path[0], { radius: 8, color: "#ffffff", weight: 3, fillColor: "#0e6b4f", fillOpacity: 1 }).bindPopup(`<b>Partida</b><br>${escapeHtml(trip.origin.label)}`);
+          const end = leaflet.circleMarker(trip.path[trip.path.length - 1], { radius: 8, color: "#ffffff", weight: 3, fillColor: "#b3261e", fillOpacity: 1 }).bindPopup(`<b>Destino</b><br>${escapeHtml(trip.destination.label)}`);
+          mapLayers = [line, start, end];
+          mapLayers.forEach((layer) => layer.addTo(map));
+          map.invalidateSize();
+          map.fitBounds(line.getBounds(), { padding: [24, 24] });
+        }
+
+        function drawTolls() {
+          if (!map || !window.L) {
+            return;
+          }
+          (tolls || []).forEach((toll, index) => {
+            const marker = window.L.circleMarker([toll.lat, toll.lon], { radius: 7, color: "#1d1600", weight: 2, fillColor: "#f0b429", fillOpacity: 1 })
+              .bindPopup(`<b>Pedágio ${index + 1}</b>${toll.name ? "<br>" + escapeHtml(toll.name) : ""}<br>${toll.price !== null ? formatMoney(toll.price) + " (carro)" : "valor não informado"}`);
+            marker.addTo(map);
+            mapLayers.push(marker);
+          });
+        }
+
+        function showTollList() {
+          tollsBox.hidden = false;
+          if (tollsStatus === "loading") {
+            tollsBox.innerHTML = "<p class=\"field-hint\">Procurando as praças de pedágio no caminho…</p>";
+            return;
+          }
+          if (tollsStatus === "unavailable") {
+            tollsBox.innerHTML = "<p class=\"notice\">Não conseguimos buscar os pedágios agora. Tente de novo em alguns minutos.</p>";
+            return;
+          }
+          if (tolls.length === 0) {
+            tollsBox.innerHTML = "<p class=\"notice\">Nenhuma praça de pedágio encontrada no caminho.</p>";
+            return;
+          }
+          const rows = tolls.map((toll, index) => `<tr><td>${index + 1}. ${escapeHtml(toll.name || "Praça de pedágio")}${toll.checkedAt ? `<small class="trip-checked">valor conferido em ${escapeHtml(formatDate(toll.checkedAt.slice(0, 10).padEnd(10, "-01").slice(0, 10)))}</small>` : ""}</td><td>${toll.price !== null ? formatMoney(toll.price) : "—"}</td></tr>`).join("");
+          const missing = tolls.filter((toll) => toll.price === null).length;
+          tollsBox.innerHTML = `<h3>${tolls.length} ${tolls.length === 1 ? "praça de pedágio" : "praças de pedágio"} no caminho (ida)</h3>
+            <table class="data-table payslip"><thead><tr><th>Praça</th><th>Carro</th></tr></thead><tbody>${rows}</tbody></table>
+            <p class="notice">Valores aproximados para carro de passeio. Valores podem estar desatualizados, e algumas praças cobram só num sentido. Confira no site da concessionária ou da ANTT/agência do estado.${missing > 0 ? ` * ${missing} ${missing === 1 ? "praça está" : "praças estão"} sem valor informado e não ${missing === 1 ? "entra" : "entram"} na soma.` : ""}</p>`;
+        }
+
+        async function fetchJson(url) {
+          const response = await fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(data.error || "Não foi possível calcular a rota agora.");
+          }
+          return data;
+        }
+
+        async function calculateTrip(submitEvent) {
+          submitEvent?.preventDefault();
+          const origin = document.getElementById("trip-origin").value.trim();
+          const destination = document.getElementById("trip-destination").value.trim();
+          if (origin.length < 3 || destination.length < 3) {
+            resultBox.innerHTML = emptyDisplay("Custo da viagem", "Preencha de onde sai e para onde vai.");
+            return;
+          }
+          submitButton.disabled = true;
+          submitButton.textContent = "Calculando rota…";
+          window.Vibe2000?.registerToolUse("custo-de-viagem");
+          try {
+            trip = await fetchJson(`/api/viagem/rota?${new URLSearchParams({ origem: origin, destino: destination })}`);
+          } catch (error) {
+            trip = null;
+            resultBox.innerHTML = emptyDisplay("Custo da viagem", escapeHtml(error.message));
+            mapBox.hidden = true;
+            tollsBox.hidden = true;
+            return;
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Calcular viagem";
+          }
+          tolls = null;
+          tollsStatus = "loading";
+          showCosts();
+          showTollList();
+          await drawMap();
+          // Pedágios: em outra consulta, para o mapa e os valores aparecerem antes
+          try {
+            const tollData = await fetchJson(`/api/viagem/pedagios?${new URLSearchParams({ rota: trip.routeId })}`);
+            tolls = tollData.tolls;
+            tollsStatus = tolls === null ? "unavailable" : "ready";
+          } catch {
+            tollsStatus = "unavailable";
+          }
+          showCosts();
+          showTollList();
+          drawTolls();
+        }
+
+        form.addEventListener("submit", calculateTrip);
+        ["trip-fuel-price", "trip-efficiency", "trip-people", "trip-round"].forEach((id) => document.getElementById(id).addEventListener("input", showCosts));
+        resultBox.innerHTML = emptyDisplay("Custo da viagem", "Preencha a partida e o destino e toque em Calcular viagem.");
       },
     },
 

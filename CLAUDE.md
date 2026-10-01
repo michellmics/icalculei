@@ -60,3 +60,21 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Nas páginas de calculadora, `calculators.js` carrega logo depois do `#calculator` (em `site/tool.php`, sem defer) para não haver CLS. Na página inicial carrega no fim, com defer.
 - Páginas públicas mandam `Cache-Control: s-maxage=600` para o cache do Cloudflare; estáticos com 1 ano (`public/.htaccess`).
 - Colunas em grid sempre com `grid-template-columns: minmax(0, 1fr)` para nada estourar a largura no celular.
+
+## Calculadora de viagem (/calculadoras/custo-de-viagem)
+- Servidor: `app/Services/TripPlanner.php` (endereços e rota no OpenRouteService, praças de pedágio no Overpass/OpenStreetMap com o valor da tag `charge` quando existir) e `app/Controllers/TripController.php` (`/api/viagem/rota` e `/api/viagem/pedagios`).
+- `.env`: `ORS_API_KEY` (grátis: 2.000 rotas e 1.000 buscas por dia; o código para em 1.800/900). `HTTP_CA_BUNDLE=windows` só no Windows de desenvolvimento.
+- Cache em `storage/cache/trip` (endereços 30 dias, rotas e pedágios 7 dias). Limite de 30 rotas por hora por visitante.
+- Front: `CALCULATORS["custo-de-viagem"]` (Leaflet do cdnjs com SRI, mapa do OpenStreetMap; crédito "© OpenStreetMap" obrigatório).
+
+## Consulta FIPE (/calculadoras/depreciacao-veiculo, aba "Consultar a FIPE")
+- `app/Services/FipeClient.php` usa a API interna do site veiculos.fipe.org.br (grátis, sem chave, NÃO é oficial: pode mudar). Plano B: a aba "Estimar o futuro" funciona sem a FIPE.
+- Cache em `storage/cache/fipe`: preço de mês passado fica para sempre; listas 30 dias; meses de referência 1 dia.
+- Rotas: `/api/fipe/marcas|modelos|anos|historico` (`app/Controllers/FipeController.php`). Combustível vem no código do ano ("2020-5": 5 = flex); ano 32000 = zero km.
+- Gráfico com Chart.js (cdnjs, com SRI), carregado só quando há resultado.
+- Página inicial: destaque principal = calculadora de viagem (`.trip-hero`); ao lado, índices IPCA/IGP-M/Selic (`app/Services/EconomicIndicators.php`, Banco Central SGS, cache 6 h, rota `/api/indices`, preenchido pelo site.js) e atalho da consulta FIPE.
+
+## Correção monetária (/calculadoras/correcao-monetaria)
+- Séries mensais do Banco Central em `app/Services/MonetaryIndexes.php` (IPCA 433, IGP-M 189, INPC 188, IGP-DI 190, Selic 4390, CDI 4391, poupança 195 a partir de 2012). Cache 12 h em `storage/cache/indexes` com atualização incremental (só os meses novos); se o Banco Central cair, usa a última versão.
+- Rota `/api/indices/serie?indice=...`; a conta (composta, do mês inicial ao final) é feita no navegador.
+- Atalho na página inicial: `.correction-promo`, acima das notícias do destaque.

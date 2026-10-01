@@ -506,8 +506,8 @@ a.copy-button, a.action-button, a.secondary-button { text-decoration: none; disp
 .not-found { text-align: center; padding: 30px 0; }
 .not-found h1 { font-size: 34px; margin-bottom: 8px; }
 .tool-card, .news-card, .featured-main, .featured-side a, .directory-box li a, .trending-links a, .link-list a, .ranked-list a { text-decoration: none; color: inherit; }
-.featured-side a { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 4px; }
-.featured-side a:hover { border-color: var(--accent); }
+.featured-side > a { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 4px; }
+.featured-side > a:hover { border-color: var(--accent); }
 .directory-box li a { display: block; padding: 3px 0; color: var(--accent); font-size: 15px; }
 .directory-box li a:hover { text-decoration: underline; }
 .trending-links a { color: var(--ink); font-weight: 600; font-size: 14px; white-space: nowrap; }
@@ -703,3 +703,126 @@ html.install-open { overflow: hidden; }
 
 /* Texto só para leitores de tela e para a ordem dos títulos (SEO/acessibilidade), invisível na tela */
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Calculadora de viagem: mapa da rota (Leaflet + OpenStreetMap) */
+/* position + z-index: isolam as camadas do Leaflet para o mapa não passar por cima do cabeçalho fixo */
+.trip-map { position: relative; z-index: 0; height: 340px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); }
+.trip-map-error { padding: 16px; margin: 0; color: var(--muted); }
+.trip-checked { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+@media (max-width: 600px) { .trip-map { height: 280px; } }
+
+/* Página inicial: destaque da calculadora de viagem (logo abaixo da cotação do dia) */
+.trip-promo { position: relative; display: grid; gap: 8px; text-decoration: none; color: var(--ink); background: linear-gradient(160deg, #ffffff, var(--accent-soft)); border: 2px solid var(--accent); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.trip-promo:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(14, 107, 79, 0.18); }
+.trip-promo-map { display: block; width: 100%; height: auto; border-radius: 10px; }
+.trip-promo-route { stroke-dasharray: 320; stroke-dashoffset: 320; animation: trip-promo-draw 2.4s ease-out 0.4s forwards; }
+.trip-promo-toll { transform-origin: 150px 49px; animation: trip-promo-pulse 1.8s ease-in-out 2.6s infinite; }
+.trip-promo-tag { position: absolute; top: 22px; right: 22px; background: var(--highlight); color: #1d1600; font: 800 11px var(--font-body); letter-spacing: 0.08em; padding: 3px 8px; border-radius: 99px; }
+.trip-promo h3 { margin: 4px 0 0; font-size: 19px; }
+.trip-promo p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.trip-promo-button { justify-self: start; margin-top: 2px; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 9px 16px; border-radius: 8px; }
+@keyframes trip-promo-draw { to { stroke-dashoffset: 0; } }
+@keyframes trip-promo-pulse { 50% { transform: scale(1.35); } }
+@media (prefers-reduced-motion: reduce) {
+  .trip-promo-route { animation: none; stroke-dashoffset: 0; }
+  .trip-promo-toll { animation: none; }
+  .trip-promo { transition: none; }
+}
+.trip-promo-button { display: inline-flex; align-items: center; gap: 8px; }
+.trip-promo-car { width: 20px; height: 20px; fill: currentColor; flex: none; } /* carro branco: usa a cor do texto do botão */
+
+/* Depreciação: consulta FIPE (gráfico do histórico) */
+.depreciation-modes-row { padding-bottom: 0; }
+#fipe-model-filter { margin-bottom: 6px; }
+.fipe-chart { position: relative; height: 240px; }
+#depreciation-fipe[hidden], #depreciation-estimate[hidden] { display: none; }
+
+/* Página inicial: destaque grande da calculadora de viagem (mesmo visual do quadro da lateral) */
+.trip-hero { position: relative; display: grid; grid-template-rows: auto 1fr; overflow: hidden; border-radius: var(--radius); border: 2px solid var(--accent); background: linear-gradient(160deg, #ffffff, var(--accent-soft)); color: var(--ink); text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.trip-hero:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(14, 107, 79, 0.2); }
+.trip-hero-map { display: block; width: 100%; height: auto; }
+.trip-hero .trip-promo-tag { top: 14px; right: 14px; font-size: 12px; }
+.trip-hero-route { stroke-dasharray: 620; stroke-dashoffset: 620; }
+.trip-hero-toll { transform-origin: 300px 111px; animation: trip-promo-pulse 1.8s ease-in-out 2.6s infinite; }
+.trip-hero-text { display: grid; gap: 8px; align-content: start; padding: 16px 18px 18px; }
+.trip-hero-text .news-meta { color: var(--accent); font-weight: 700; }
+.trip-hero h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -0.5px; }
+.trip-hero p { margin: 0; color: var(--muted); }
+.trip-hero .trip-promo-button { margin-top: 4px; font-size: 16px; padding: 11px 18px; }
+
+/* Índices econômicos (IPCA, IGP-M, Selic) ao lado do destaque */
+.indicators-box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.indicators-box h3 { margin: 0 0 6px; }
+.indicators-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.indicators-table th, .indicators-table td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+.indicators-table thead th { font-family: var(--font-number); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.indicators-table tbody th { text-align: left; font-weight: 700; }
+.indicators-table tbody th small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.indicators-table td { font-family: var(--font-number); font-weight: 600; white-space: nowrap; }
+.indicators-table td small { display: block; font-family: var(--font-body); font-weight: 400; font-size: 11px; color: var(--muted); }
+.indicators-table tr:last-child th, .indicators-table tr:last-child td { border-bottom: 0; }
+.indicators-source { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Atalho para a consulta FIPE */
+.featured-side > a.fipe-promo, .featured-side > a.correction-promo { display: flex; align-items: center; gap: 12px; border: 2px solid var(--accent); background: linear-gradient(160deg, #ffffff, var(--accent-soft)); }
+.fipe-promo-chart { width: 64px; height: 40px; flex: none; background: #ffffff; border-radius: 6px; }
+.fipe-promo b { display: block; font-size: 16px; color: var(--ink); }
+.fipe-promo small { display: block; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) {
+  .trip-hero, .trip-hero-toll { transition: none; animation: none; }
+  .trip-hero-route { stroke-dashoffset: 0; }
+}
+
+/* Correção monetária: lista de meses recolhida */
+.correction-months summary { cursor: pointer; font-weight: 600; color: var(--accent); margin: 10px 0 6px; }
+#correction-shortcuts .secondary-button { font-size: 14px; }
+
+/* Página inicial: card do álcool ou gasolina (lateral, abaixo da cotação) */
+.fuel-promo-bar { transform-box: fill-box; transform-origin: left center; transform: scaleX(0); animation: fuel-promo-fill 1.6s ease-out 0.4s forwards; }
+@keyframes fuel-promo-fill { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .fuel-promo-bar { animation: none; transform: none; } }
+
+/* ---------- Calendário de feriados (/feriados/{ano}) ---------- */
+.holiday-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; margin: 4px 0 18px; }
+.holiday-year-nav { display: flex; align-items: center; gap: 10px; }
+.holiday-year-nav b { font-family: var(--font-number); font-size: 20px; }
+.holiday-state-field { min-width: 240px; flex: 1 1 260px; max-width: 420px; }
+.holiday-agenda { text-decoration: none; }
+.holiday-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.holiday-summary > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 2px; }
+.holiday-summary b { font-family: var(--font-number); font-size: 26px; color: var(--accent); }
+.holiday-summary span { color: var(--muted); font-size: 14px; }
+.holiday-summary .holiday-next { border: 2px solid var(--accent); background: linear-gradient(160deg, #ffffff, var(--accent-soft)); }
+.holiday-list-card h2, .holiday-calendar + * h2 { font-size: 22px; }
+.holiday-table td { vertical-align: top; }
+.holiday-table td:first-child { white-space: nowrap; }
+.holiday-table td small { display: block; color: var(--muted); font-size: 12px; }
+.holiday-table td:last-child { text-align: right; }
+.holiday-bridge { color: var(--accent) !important; font-weight: 600; }
+.holiday-row.is-facultativo td { color: var(--muted); }
+.holiday-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.holiday-tag.is-nacional, .holiday-day.is-nacional { background: #0e6b4f; color: #ffffff; }
+.holiday-tag.is-estadual, .holiday-day.is-estadual { background: #3a6fd8; color: #ffffff; }
+.holiday-tag.is-municipal, .holiday-day.is-municipal { background: #8e44ad; color: #ffffff; }
+.holiday-tag.is-facultativo, .holiday-day.is-facultativo { background: #fdf1d6; color: #6b4e00; }
+.holiday-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.holiday-calendar { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.holiday-month h3 { font-size: 15px; margin: 0 0 6px; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.holiday-month h3 small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.holiday-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; font-family: var(--font-number); font-size: 12px; }
+.holiday-weekday { color: var(--muted); font-weight: 600; padding: 2px 0; }
+.holiday-day { padding: 4px 0; border-radius: 5px; }
+.holiday-day.is-weekend { color: var(--muted); background: var(--paper); }
+.holiday-day[title] { font-weight: 700; cursor: help; }
+.holiday-state-links { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; font-size: 14px; }
+.holiday-state-links a[aria-current="page"] { font-weight: 700; color: var(--ink); }
+
+/* Página inicial: chamada do calendário de feriados (canto inferior direito) */
+.holiday-promo { text-decoration: none; color: var(--ink); display: grid; gap: 8px; border: 2px solid var(--accent); background: linear-gradient(160deg, #ffffff, var(--accent-soft)); }
+.holiday-promo-top { display: flex; gap: 12px; align-items: center; }
+.holiday-promo-icon { flex: none; width: 56px; border-radius: 10px; overflow: hidden; text-align: center; box-shadow: 0 6px 14px rgba(14, 107, 79, 0.2); background: #ffffff; }
+.holiday-promo-icon span { display: block; background: #b3261e; color: #ffffff; font: 700 11px var(--font-body); text-transform: uppercase; padding: 2px 0; }
+.holiday-promo-icon b { display: block; font: 800 24px/1.3 var(--font-display); }
+.holiday-promo h3 { margin: 0; font-size: 17px; }
+.holiday-promo p { margin: 0; font-size: 14px; color: var(--muted); }
+.holiday-promo .trip-promo-button { justify-self: start; }

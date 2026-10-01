@@ -736,6 +736,52 @@ HTML,
 </div>
 HTML,
         ],
+        'correcao-monetaria' => [
+            'name' => 'Correção monetária',
+            'seo_title' => 'Calculadora de Correção Monetária: IPCA, IGP-M, INPC, Selic e CDI',
+            'symbol' => '%↑',
+            'category' => 'financas',
+            'description' => 'Corrige um valor por IPCA, IGP-M, INPC, Selic, CDI ou poupança.',
+            'keywords' => 'correção monetária atualizar valor corrigir pela inflação ipca igpm reajuste de aluguel inpc igp-di selic cdi poupança acumulado 12 meses',
+            'ready' => true,
+            'reviewed' => '2026-09-30',
+            'lead' => 'Informe um valor, escolha o índice (IPCA, IGP-M, INPC, IGP-DI, Selic, CDI ou poupança) e o período: veja o valor corrigido, a variação acumulada e o mês a mês.',
+            'explainer' => <<<'HTML'
+<h2>Como funciona a correção monetária</h2>
+<p>A correção aplica, mês a mês, a variação do índice escolhido sobre o valor. A conta é composta: a variação de cada mês incide sobre o valor já corrigido nos meses anteriores.</p>
+<p class="formula">valor corrigido = valor × (1 + variação mês 1) × (1 + variação mês 2) × …</p>
+<p><b>Qual índice usar?</b> IPCA para inflação oficial e muitos contratos; IGP-M ou IPCA para aluguel (o que estiver no contrato); INPC para salários e benefícios do INSS; Selic, CDI e poupança para comparar com o rendimento de aplicações.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Como calcular o reajuste do aluguel?</summary><p>Veja no contrato o índice (IGP-M ou IPCA) e use o acumulado dos 12 meses anteriores ao aniversário do contrato, normalmente até o último mês divulgado. O botão "Últimos 12 meses" já faz essa conta.</p></details>
+  <details><summary>O valor pode diminuir?</summary><p>Sim. Em meses de deflação o índice é negativo, e se o acumulado do período for negativo o valor corrigido fica menor. Muitos contratos preveem que, nesse caso, o valor não muda.</p></details>
+  <details><summary>Qual a diferença entre IPCA e IGP-M?</summary><p>O IPCA (IBGE) mede os preços que as famílias pagam no dia a dia. O IGP-M (FGV) também inclui preços no atacado e na construção, por isso oscila mais com o dólar e as commodities.</p></details>
+</div>
+HTML,
+        ],
+        'custo-de-viagem' => [
+            'name' => 'Custo de viagem',
+            'seo_title' => 'Calculadora de Viagem: Combustível, Pedágios e Rota no Mapa',
+            'symbol' => '🗺',
+            'category' => 'veiculos',
+            'description' => 'Rota no mapa, gasto com combustível e pedágios do caminho.',
+            'keywords' => 'calculadora de viagem custo de viagem gasto de combustível viagem pedágio rota mapa distância entre cidades quanto gasto de gasolina',
+            'ready' => true,
+            'reviewed' => '2026-09-30',
+            'lead' => 'Informe de onde sai, para onde vai, o preço do litro e o consumo do carro: veja a rota no mapa, a distância, o tempo, o gasto com combustível e os pedágios do caminho.',
+            'explainer' => <<<'HTML'
+<h2>Como é calculado o custo da viagem</h2>
+<p>A rota mais rápida de carro é calculada com os mapas do OpenStreetMap. Com a distância, a conta do combustível é simples:</p>
+<p class="formula">combustível = distância ÷ consumo (km/l) × preço do litro</p>
+<p>Os pedágios são as praças que ficam no caminho, com o valor para carro de passeio quando ele está informado no OpenStreetMap. Some tudo e, se quiser, divida entre os passageiros.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Os valores dos pedágios são oficiais?</summary><p>Não. São valores informados pela comunidade do OpenStreetMap e podem estar desatualizados ou faltar em algumas praças. Confira no site da concessionária, da ANTT ou da agência do seu estado antes de viajar.</p></details>
+  <details><summary>Qual consumo devo usar?</summary><p>O consumo na estrada, que costuma ser melhor que na cidade. Veja no computador de bordo, no manual ou na tabela do Inmetro. Carro cheio, ar-condicionado e velocidade alta aumentam o gasto.</p></details>
+  <details><summary>O tempo de viagem considera trânsito?</summary><p>Não. É o tempo ao volante em condições normais, sem paradas e sem trânsito. Para viagens longas, inclua paradas para descanso a cada 2 horas.</p></details>
+</div>
+HTML,
+        ],
         'ipva' => [
             'name' => 'IPVA + licenciamento',
             'seo_title' => 'Calculadora de IPVA 2026 por Estado + Licenciamento',
@@ -762,21 +808,25 @@ HTML,
         ],
         'depreciacao-veiculo' => [
             'name' => 'Depreciação do carro',
-            'seo_title' => 'Calculadora de Depreciação de Carro (FIPE)',
+            'seo_title' => 'Desvalorização do Carro na Tabela FIPE: Histórico de 5 Anos',
             'symbol' => '↘',
             'category' => 'veiculos',
-            'description' => 'Quanto o veículo perde de valor em 1, 3 e 5 anos.',
-            'keywords' => 'depreciação desvalorização fipe revenda perda de valor carro usado zero km',
+            'description' => 'Histórico real na Tabela FIPE e quanto o carro perde por ano.',
+            'keywords' => 'depreciação desvalorização tabela fipe histórico fipe valor do carro anos anteriores revenda perda de valor carro usado moto zero km',
             'ready' => true,
             'reviewed' => '2026-09-30',
-            'lead' => 'Estime quanto o seu carro ou moto vai perder de valor em 1, 3 e 5 anos, com médias de desvalorização por categoria.',
+            'lead' => 'Escolha o carro, moto ou caminhão e veja na Tabela FIPE quanto ele valia nos últimos 5 anos: gráfico, perda total e perda média por ano. Ou estime a desvalorização futura.',
             'explainer' => <<<'HTML'
+<h2>Histórico na Tabela FIPE</h2>
+<p>A consulta busca o preço do mesmo veículo (marca, modelo e ano) no mesmo mês de cada um dos últimos 5 anos e mostra se ele desvalorizou ou valorizou. A perda média por ano é a taxa composta entre o primeiro e o último valor.</p>
+<p class="formula">perda média por ano = (valor de hoje ÷ valor de 5 anos atrás)^(1/5) − 1</p>
 <h2>Como o carro perde valor</h2>
 <p>A maior perda acontece no primeiro ano: o carro zero km deixa de ser novo assim que sai da concessionária. Depois, a desvalorização costuma ser menor e mais constante, ano a ano.</p>
 <p class="formula">valor futuro = valor atual × (1 − perda do 1º ano) × (1 − perda anual)ⁿ⁻¹</p>
 <p>Os percentuais sugeridos são médias aproximadas por categoria. Picapes e modelos muito procurados costumam perder menos; carros de luxo, importados e elétricos, mais.</p>
 <h2>Perguntas frequentes</h2>
 <div class="faq">
+  <details><summary>Carro pode valorizar?</summary><p>Pode. Entre 2021 e 2022, com falta de carros novos, muitos usados subiram de preço na Tabela FIPE. O gráfico mostra esses períodos de alta.</p></details>
   <details><summary>A tabela FIPE vai mostrar exatamente esse valor?</summary><p>Não. A FIPE acompanha os preços médios anunciados a cada mês, e eles dependem da procura, de lançamentos e da economia. Use o resultado como estimativa para planejar a troca do carro.</p></details>
   <details><summary>Como diminuir a desvalorização?</summary><p>Revisões em dia na concessionária ou com nota fiscal, baixa quilometragem, cores neutras e versões mais procuradas ajudam o carro a valer mais na revenda.</p></details>
 </div>

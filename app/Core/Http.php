@@ -26,6 +26,18 @@ class Http
         exit;
     }
 
+    /**
+     * APIs que gastam cota de serviços externos: só a própria página do site pode chamar.
+     * (O navegador avisa de onde veio o pedido no cabeçalho Sec-Fetch-Site.)
+     */
+    public static function rejectOtherSites(): void
+    {
+        $fetchSite = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? '';
+        if ($fetchSite !== '' && !in_array($fetchSite, ['same-origin', 'none'], true)) {
+            self::json(['error' => 'Acesso não permitido.'], 403);
+        }
+    }
+
     public static function noContent(int $statusCode = 204): never
     {
         http_response_code($statusCode);
@@ -45,9 +57,11 @@ class Http
             "default-src 'self'",
             // static.cloudflareinsights.com: estatísticas do Cloudflare (Web Analytics), que ele injeta nas páginas
             "script-src 'self' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' https://fonts.gstatic.com",
-            "img-src 'self' data:" . ($adsEnabled ? ' https:' : ''),
+            // cdnjs: estilo do mapa (Leaflet) da calculadora de viagem
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+            "font-src 'self'",
+            // tile.openstreetmap.org: imagens do mapa da calculadora de viagem
+            "img-src 'self' data: https://tile.openstreetmap.org" . ($adsEnabled ? ' https:' : ''),
             // APIs gratuitas de cotação de moedas (chamadas pelo navegador)
             "connect-src 'self' https://economia.awesomeapi.com.br https://api.frankfurter.dev https://cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
             'frame-src ' . ($adsEnabled ? $googleAdHosts : "'none'"),

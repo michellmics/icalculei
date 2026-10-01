@@ -32,6 +32,8 @@ function config(string $key): mixed
         'admin_user' => Env::get('ADMIN_USER', ''),
         'admin_password' => Env::get('ADMIN_PASSWORD', ''),
         'admin_remember_key' => Env::get('ADMIN_REMEMBER_KEY', ''),
+        'ors_api_key' => Env::get('ORS_API_KEY', ''),
+        'http_ca_bundle' => Env::get('HTTP_CA_BUNDLE', ''),
         'adsense_client' => Env::get('ADSENSE_CLIENT', ''),
         'ads_placeholders' => Env::getBool('ADS_PLACEHOLDERS', false),
         'contact_email' => Env::get('CONTACT_EMAIL', ''),

@@ -265,6 +265,41 @@
     });
   }
 
+  /* ---------- Índices econômicos da página inicial (IPCA, IGP-M, Selic) ---------- */
+  // Os dados vêm do Banco Central pelo servidor (/api/indices), que guarda o resultado em cache
+  const indicatorsBox = document.getElementById("indicators");
+  if (indicatorsBox) {
+    const percentFormat = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const asPercent = (value) => `${percentFormat.format(value)}%`;
+    const fillRow = (key, currentHtml, yearHtml) => {
+      const row = indicatorsBox.querySelector(`[data-indicator="${key}"]`);
+      row.querySelector(".indicator-current").innerHTML = currentHtml;
+      row.querySelector(".indicator-year").innerHTML = yearHtml;
+    };
+    fetch("/api/indices", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((indicators) => {
+        for (const key of ["ipca", "igpm"]) {
+          const index = indicators[key];
+          fillRow(key, index ? `${asPercent(index.monthly)}<small>${index.month}</small>` : "—", index ? asPercent(index.twelveMonths) : "—");
+        }
+        const selic = indicators.selic;
+        fillRow("selic", selic ? `${asPercent(selic.target)}<small>meta ao ano</small>` : "—", selic ? `${asPercent(selic.twelveMonths)}<small>rendeu</small>` : "—");
+      })
+      .catch(() => {
+        indicatorsBox.querySelectorAll(".indicator-current, .indicator-year").forEach((cell) => { cell.textContent = "—"; });
+      });
+  }
+
+  /* ---------- Calendário de feriados: escolher o estado abre a página dele ---------- */
+  const holidayState = document.getElementById("holiday-state");
+  if (holidayState) {
+    holidayState.addEventListener("change", () => {
+      const year = holidayState.dataset.year;
+      window.location.href = holidayState.value ? `/feriados/${year}/${holidayState.value}` : `/feriados/${year}`;
+    });
+  }
+
   /* ---------- PWA: instala o service worker do site (public/sw.js) ---------- */
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

@@ -86,6 +86,7 @@ $usesCalculators = $pageKey === 'inicio';
     </div>
     <div class="nav-bar" id="site-menu">
       <nav class="header-nav" aria-label="Categorias">
+        <a class="nav-chip" href="/"<?= $pageKey === 'inicio' && $activeCategory === null && $searchTerm === '' ? ' aria-current="page"' : '' ?>>🏠 Inicial</a>
         <a class="nav-chip nav-news" href="/noticias">📰 Notícias</a>
         <?php foreach ($categories as $categoryKey => $categoryName): ?>
           <a class="nav-chip" href="/?categoria=<?= e($categoryKey) ?>" <?= $activeCategory === $categoryKey ? 'aria-current="page"' : '' ?>><?= e($categoryName) ?></a>
