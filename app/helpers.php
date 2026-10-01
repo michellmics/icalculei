@@ -63,6 +63,31 @@ function url(string $path = '/'): string
 }
 
 /**
+ * Título de uma calculadora para o Google, sempre com o ano atual e "Grátis"
+ * (o ano muda sozinho em janeiro; não escreva o ano à mão no seo_title).
+ *   "Calculadora de Salário Líquido {ano} (INSS e IR)" → "Calculadora de Salário Líquido 2026 Grátis (INSS e IR)"
+ *   "Calculadora de IMC: Índice de Massa Corporal"     → "Calculadora de IMC 2026 Grátis: Índice de Massa Corporal"
+ *   "Calculadora de Média Ponderada de Notas"          → "Calculadora de Média Ponderada de Notas 2026 Grátis"
+ */
+function tool_title(array $tool): string
+{
+    $year = date('Y');
+    $hasFree = preg_match('/gr[áa]tis/iu', $tool['seo_title'] ?? '') === 1;
+    $free = $hasFree ? '' : ' Grátis';
+    // {ano} ou um ano escrito à mão (ex.: 2026) viram o ano atual, seguido de "Grátis"
+    $title = preg_replace('/\{ano\}|\b20\d{2}\b/u', $year . $free, $tool['seo_title'] ?? $tool['name'], 1, $replacements);
+    if ($replacements === 0) {
+        // Sem ano no texto: entra antes dos dois-pontos ou no fim
+        $colon = mb_strpos($title, ':');
+        $title = $colon === false
+            ? $title . ' ' . $year . $free
+            : mb_substr($title, 0, $colon) . ' ' . $year . $free . mb_substr($title, $colon);
+    }
+
+    return $title;
+}
+
+/**
  * Arquivo de public/assets com a data de alteração, para o navegador não usar versão antiga.
  */
 function asset(string $path): string

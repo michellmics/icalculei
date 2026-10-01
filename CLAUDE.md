@@ -13,7 +13,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 2. Textos (lead, explicação, perguntas frequentes) e metadados: `content/tools.php`, mesmo id.
 3. Sempre atualizar `reviewed` (data da revisão) em `content/tools.php`.
    - `answer` (opcional): resposta direta de 40 a 60 palavras abaixo do título, no lugar do lead (destaque no Google). Se tiver números (tabelas, datas), atualizar junto quando eles mudarem.
-   - SEO: toda calculadora tem `seo_title` (busca de cauda longa no começo, até ~55 caracteres) e pelo menos 2 perguntas frequentes em `<details>` (viram FAQPage). Textos curtos e diretos.
+   - SEO: toda calculadora tem `seo_title` (busca de cauda longa no começo, até ~55 caracteres; o ano atual e "Grátis" entram sozinhos por `tool_title()` em helpers.php: use `{ano}` para escolher a posição, nunca o ano escrito à mão) e pelo menos 2 perguntas frequentes em `<details>` (viram FAQPage). Textos curtos e diretos.
 4. Nova calculadora: criar nos dois arquivos com o mesmo id; ela ganha página, sitemap e aparece no diretório sozinha.
    Depois rode `php bin/og-images.php` para gerar o banner de compartilhamento dela (também ao mudar nome ou descrição).
 5. Campo de valor em dinheiro: `<input id="..." inputmode="numeric" data-money value="1.000,00">` (máscara automática; ler com `parseNumber`).

@@ -74,7 +74,7 @@ class StructuredData
             [
                 '@context' => 'https://schema.org',
                 '@type' => 'WebApplication',
-                'name' => $tool['seo_title'] ?? $tool['name'],
+                'name' => tool_title($tool),
                 'alternateName' => $tool['name'],
                 'url' => url('/calculadoras/' . $tool['id']),
                 'description' => $tool['lead'],

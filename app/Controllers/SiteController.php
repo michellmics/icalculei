@@ -92,7 +92,7 @@ class SiteController
         $relatedNews = array_values(array_filter(Content::news(), fn (array $article) => in_array($toolId, $article['related_tools'], true)));
 
         $this->render('site/tool', [
-            'pageTitle' => ($tool['seo_title'] ?? $tool['name']) . ' | Vibe2000',
+            'pageTitle' => tool_title($tool) . ' | Vibe2000',
             'metaDescription' => $tool['lead'],
             'ogImage' => share_banner($tool['id']),
             'structuredData' => StructuredData::tool($tool, Content::categories()[$tool['category']] ?? ''),
