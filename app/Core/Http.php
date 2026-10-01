@@ -51,6 +51,8 @@ class Http
     public static function sendSecurityHeaders(): void
     {
         $adsEnabled = config('adsense_client') !== '';
+        // Cloudflare Worker da FIPE (histórico na calculadora de depreciação, chamado pelo navegador)
+        $fipeWorker = (string) config('fipe_proxy_url');
         $googleAdHosts = 'https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googletagservices.com https://*.adtrafficquality.google https://*.googleadservices.com';
 
         $policy = [
@@ -63,7 +65,7 @@ class Http
             // tile.openstreetmap.org: imagens do mapa da calculadora de viagem
             "img-src 'self' data: https://tile.openstreetmap.org" . ($adsEnabled ? ' https:' : ''),
             // APIs gratuitas de cotação de moedas (chamadas pelo navegador)
-            "connect-src 'self' https://economia.awesomeapi.com.br https://api.frankfurter.dev https://cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
+            "connect-src 'self' https://economia.awesomeapi.com.br https://api.frankfurter.dev https://cloudflareinsights.com" . ($fipeWorker !== '' ? ' ' . $fipeWorker : '') . ($adsEnabled ? ' ' . $googleAdHosts : ''),
             'frame-src ' . ($adsEnabled ? $googleAdHosts : "'none'"),
             "object-src 'none'",
             "base-uri 'self'",

@@ -25,7 +25,7 @@ use App\Services\Ads;
     <div class="main-column">
       <?php if ($tool['ready']): ?>
         <h2 class="visually-hidden">Calcule aqui</h2>
-        <section class="calculator" id="calculator" data-tool="<?= e($tool['id']) ?>" aria-live="polite">
+        <section class="calculator" id="calculator" data-tool="<?= e($tool['id']) ?>"<?php if ($tool['id'] === 'depreciacao-veiculo' && config('fipe_proxy_url') !== ''): ?> data-fipe-worker="<?= e(config('fipe_proxy_url')) ?>"<?php endif; ?> aria-live="polite">
           <noscript>
             <div class="coming-soon">Esta calculadora precisa do JavaScript ativado no navegador.</div>
           </noscript>

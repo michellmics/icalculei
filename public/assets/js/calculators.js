@@ -2326,6 +2326,20 @@
           }
           return data;
         }
+        // Histórico pelo Cloudflare Worker (cloudflare/fipe-worker.js), chamado DO NAVEGADOR: a FIPE só responde
+        // a acessos do Brasil e o servidor do site fica nos EUA. Sem Worker configurado ou se ele falhar, usa o servidor.
+        async function fetchHistoryFromWorker(params) {
+          const workerUrl = document.getElementById("calculator")?.dataset.fipeWorker;
+          if (!workerUrl) {
+            throw new Error("sem Worker");
+          }
+          const response = await fetch(`${workerUrl}/historico?${new URLSearchParams(params)}`, { headers: { Accept: "application/json" } });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !Array.isArray(data.points)) {
+            throw new Error("Worker indisponível");
+          }
+          return data;
+        }
         function fillSelect(select, items, placeholder) {
           select.innerHTML = `<option value="">${placeholder}</option>` + items.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join("");
           select.disabled = items.length === 0;
@@ -2414,9 +2428,10 @@
           const thisRequest = ++requestNumber;
           fipeResult.innerHTML = emptyDisplay("Desvalorização na FIPE", "Consultando a Tabela FIPE dos últimos 5 anos…");
           window.Vibe2000?.registerToolUse("depreciacao-veiculo");
+          const params = { tipo: typeSelect.value, marca: brandSelect.value, modelo: modelSelect.value, ano: yearSelect.value };
           let history;
           try {
-            history = await fetchFipe("historico", { tipo: typeSelect.value, marca: brandSelect.value, modelo: modelSelect.value, ano: yearSelect.value });
+            history = await fetchHistoryFromWorker(params).catch(() => fetchFipe("historico", params));
           } catch (error) {
             if (thisRequest === requestNumber) {
               showFipeError(error.message);

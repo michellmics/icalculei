@@ -32,32 +32,6 @@ class FipeClient
     private const REQUEST_TIMEOUT = 25; // segundos; a FIPE às vezes demora para responder a servidores
     public const ZERO_KM_YEAR = 32000; // a FIPE usa o "ano" 32000 para veículo zero km
 
-    /**
-     * Endereço da API: direto na FIPE ou pelo Cloudflare Worker (cloudflare/fipe-worker.js) quando
-     * FIPE_PROXY_URL está no .env (a FIPE bloqueia servidores de hospedagem com HTTP 403).
-     */
-    private static function apiUrl(string $endpoint): string
-    {
-        $proxyUrl = (string) config('fipe_proxy_url');
-
-        return ($proxyUrl !== '' ? $proxyUrl . '/api/veiculos' : self::BASE_URL) . '/' . $endpoint;
-    }
-
-    /**
-     * "via Worker" ou "direto", para o log mostrar por onde o pedido foi.
-     */
-    private static function route(): string
-    {
-        return config('fipe_proxy_url') !== '' ? 'via Worker' : 'direto';
-    }
-
-    private static function requestHeaders(): array
-    {
-        $proxyKey = (string) config('fipe_proxy_key');
-
-        return $proxyKey !== '' ? [...self::REQUEST_HEADERS, 'X-Proxy-Key: ' . $proxyKey] : self::REQUEST_HEADERS;
-    }
-
     private static function cache(): FileCache
     {
         return new FileCache('fipe');
@@ -71,18 +45,18 @@ class FipeClient
         try {
             [$status, $body] = HttpClient::request(
                 'POST',
-                self::apiUrl($endpoint),
-                self::requestHeaders(),
+                self::BASE_URL . '/' . $endpoint,
+                self::REQUEST_HEADERS,
                 http_build_query($fields),
                 self::REQUEST_TIMEOUT
             );
         } catch (Throwable $exception) {
-            ErrorHandler::log('[fipe] ' . $endpoint . ' (' . self::route() . '): ' . $exception->getMessage());
+            ErrorHandler::log('[fipe] ' . $endpoint . ': ' . $exception->getMessage());
             throw new FipeException('A Tabela FIPE não respondeu agora. Tente de novo em instantes.', 503);
         }
         $data = json_decode($body, true);
         if ($status !== 200 || !is_array($data)) {
-            ErrorHandler::log("[fipe] {$endpoint} (" . self::route() . "): HTTP {$status} " . self::bodySummary($body));
+            ErrorHandler::log("[fipe] {$endpoint}: HTTP {$status} " . self::bodySummary($body));
             throw new FipeException('A Tabela FIPE não respondeu agora. Tente de novo em instantes.', 503);
         }
 
@@ -264,8 +238,8 @@ class FipeClient
             }
             $missing[$reference['code']] = [
                 'method' => 'POST',
-                'url' => self::apiUrl('ConsultarValorComTodosParametros'),
-                'headers' => self::requestHeaders(),
+                'url' => self::BASE_URL . '/ConsultarValorComTodosParametros',
+                'headers' => self::REQUEST_HEADERS,
                 'body' => http_build_query([
                     'codigoTabelaReferencia' => $reference['code'],
                     'codigoMarca' => $brandCode,
@@ -290,7 +264,7 @@ class FipeClient
             foreach ($responses as $referenceCode => [$status, $body]) {
                 $data = json_decode($body, true);
                 if ($status !== 200 || !is_array($data)) {
-                    ErrorHandler::log("[fipe] histórico {$referenceCode} (" . self::route() . "): HTTP {$status} " . self::bodySummary($body));
+                    ErrorHandler::log("[fipe] histórico {$referenceCode}: HTTP {$status} " . self::bodySummary($body));
                     continue; // fica sem esse mês (e sem cache, para tentar de novo depois)
                 }
                 $answered++;

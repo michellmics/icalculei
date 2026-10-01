@@ -87,9 +87,10 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Só no modo app: puxar para atualizar e barra de navegação no rodapé (Voltar, Avançar, Início, Atualizar) em telas de celular. Marcação `#app-nav` nos layouts do site e do painel.
 
 ## FIPE em produção
-- O site da FIPE (atrás do Cloudflare deles) bloqueia o servidor da hospedagem com HTTP 403 (confirmado no log de produção). Solução: Cloudflare Worker `cloudflare/fipe-worker.js` + `FIPE_PROXY_URL`/`FIPE_PROXY_KEY` no .env (passo a passo no arquivo). O Worker precisa mandar User-Agent (sem ele a FIPE também dá 403).
-- Sem Worker ou se ele falhar: `FipeClient` cai para a API da Parallelum (listas e valor atual; sem histórico) e a tela avisa.
-- Histórico: os 6 meses vão em paralelo (`HttpClient::requestMany`); demora acima de 5 s fica no log. Erros de serviços externos respondem 503 (o Cloudflare troca respostas 502 pela página de erro dele).
+- A FIPE (atrás do Cloudflare dela) só responde a acessos do Brasil: o servidor (EUA) recebe HTTP 403, direto ou por Worker (confirmado: Worker chamado pelo servidor roda em Miami e leva 403).
+- Histórico: o NAVEGADOR chama o Cloudflare Worker `cloudflare/fipe-worker.js` (`GET /historico`, só aceita Origin do site; roda em São Paulo para visitantes do Brasil). Endereço em `FIPE_PROXY_URL` no .env → atributo `data-fipe-worker` na página e liberado no CSP (`Http::sendSecurityHeaders`). Mudou o Worker? Colar de novo no painel do Cloudflare.
+- Sem Worker ou se ele falhar: `/api/fipe/historico` no servidor, que cai para a Parallelum (só o valor atual) e a tela avisa. Listas (marcas/modelos/anos) vêm do servidor pela Parallelum (mesmos códigos da FIPE).
+- Erros de serviços externos respondem 503 (o Cloudflare troca respostas 502 pela página de erro dele). Histórico no servidor pede os 6 meses em paralelo (`HttpClient::requestMany`).
 
 ## Faixa "Indicadores" (topo da página inicial)
 - `app/Services/MarketTicker.php` + rota `/api/indicadores`; preenchida e animada pelo site.js. Itens: Bitcoin (AwesomeAPI), CDI (BCB 4389), gasolina/etanol/diesel S10 (planilha semanal da ANP, aba BRASIL, semana atual × anterior), poupança (BCB 195) e Focus (IPCA e Selic esperados para o ano).
