@@ -24,6 +24,60 @@ class HttpClient
             throw new RuntimeException('O PHP precisa da extensão curl.');
         }
         $curl = curl_init($url);
+        curl_setopt_array($curl, self::options($method, $headers, $body, $timeoutSeconds));
+        $responseBody = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $error = curl_error($curl);
+        curl_close($curl);
+        if ($responseBody === false) {
+            throw new RuntimeException('Falha na conexão: ' . $error);
+        }
+
+        return [$status, (string) $responseBody];
+    }
+
+    /**
+     * Vários pedidos ao mesmo tempo: o tempo total é o do mais lento, não a soma.
+     * $requests = [chave => ['method' => 'POST', 'url' => ..., 'headers' => [...], 'body' => ...]].
+     * Devolve [chave => [código HTTP, corpo]]; quem falhou na conexão volta com código 0 e o erro no corpo.
+     */
+    public static function requestMany(array $requests, int $timeoutSeconds = 20): array
+    {
+        if (!function_exists('curl_multi_init')) {
+            throw new RuntimeException('O PHP precisa da extensão curl.');
+        }
+        $multi = curl_multi_init();
+        $handles = [];
+        foreach ($requests as $key => $request) {
+            $curl = curl_init($request['url']);
+            curl_setopt_array($curl, self::options($request['method'] ?? 'GET', $request['headers'] ?? [], $request['body'] ?? null, $timeoutSeconds));
+            curl_multi_add_handle($multi, $curl);
+            $handles[$key] = $curl;
+        }
+        do {
+            $status = curl_multi_exec($multi, $running);
+            if ($running > 0) {
+                curl_multi_select($multi, 1.0);
+            }
+        } while ($running > 0 && $status === CURLM_OK);
+
+        $responses = [];
+        foreach ($handles as $key => $curl) {
+            $body = curl_multi_getcontent($curl);
+            $error = curl_error($curl);
+            $responses[$key] = $error !== '' || $body === null
+                ? [0, 'Falha na conexão: ' . $error]
+                : [(int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE), (string) $body];
+            curl_multi_remove_handle($multi, $curl);
+            curl_close($curl);
+        }
+        curl_multi_close($multi);
+
+        return $responses;
+    }
+
+    private static function options(string $method, array $headers, ?string $body, int $timeoutSeconds): array
+    {
         $options = [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
@@ -44,15 +98,7 @@ class HttpClient
         } elseif ($caBundle !== '' && is_file($caBundle)) {
             $options[CURLOPT_CAINFO] = $caBundle;
         }
-        curl_setopt_array($curl, $options);
-        $responseBody = curl_exec($curl);
-        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
-        if ($responseBody === false) {
-            throw new RuntimeException('Falha na conexão: ' . $error);
-        }
 
-        return [$status, (string) $responseBody];
+        return $options;
     }
 }

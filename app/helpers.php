@@ -33,6 +33,8 @@ function config(string $key): mixed
         'admin_password' => Env::get('ADMIN_PASSWORD', ''),
         'admin_remember_key' => Env::get('ADMIN_REMEMBER_KEY', ''),
         'ors_api_key' => Env::get('ORS_API_KEY', ''),
+        'fipe_proxy_url' => rtrim(Env::get('FIPE_PROXY_URL', ''), '/'),
+        'fipe_proxy_key' => Env::get('FIPE_PROXY_KEY', ''),
         'http_ca_bundle' => Env::get('HTTP_CA_BUNDLE', ''),
         'adsense_client' => Env::get('ADSENSE_CLIENT', ''),
         'ads_placeholders' => Env::getBool('ADS_PLACEHOLDERS', false),

@@ -28,7 +28,27 @@ class FipeClient
     private const LIST_CACHE_SECONDS = 30 * 86400;
     private const REFERENCE_CACHE_SECONDS = 86400;
     public const HISTORY_YEARS = 5;
+    private const REQUEST_HEADERS = ['Content-Type: application/x-www-form-urlencoded', 'Referer: https://veiculos.fipe.org.br/', 'Accept: application/json'];
+    private const REQUEST_TIMEOUT = 25; // segundos; a FIPE às vezes demora para responder a servidores
     public const ZERO_KM_YEAR = 32000; // a FIPE usa o "ano" 32000 para veículo zero km
+
+    /**
+     * Endereço da API: direto na FIPE ou pelo Cloudflare Worker (cloudflare/fipe-worker.js) quando
+     * FIPE_PROXY_URL está no .env (a FIPE bloqueia servidores de hospedagem com HTTP 403).
+     */
+    private static function apiUrl(string $endpoint): string
+    {
+        $proxyUrl = (string) config('fipe_proxy_url');
+
+        return ($proxyUrl !== '' ? $proxyUrl . '/api/veiculos' : self::BASE_URL) . '/' . $endpoint;
+    }
+
+    private static function requestHeaders(): array
+    {
+        $proxyKey = (string) config('fipe_proxy_key');
+
+        return $proxyKey !== '' ? [...self::REQUEST_HEADERS, 'X-Proxy-Key: ' . $proxyKey] : self::REQUEST_HEADERS;
+    }
 
     private static function cache(): FileCache
     {
@@ -43,10 +63,10 @@ class FipeClient
         try {
             [$status, $body] = HttpClient::request(
                 'POST',
-                self::BASE_URL . '/' . $endpoint,
-                ['Content-Type: application/x-www-form-urlencoded', 'Referer: https://veiculos.fipe.org.br/', 'Accept: application/json'],
+                self::apiUrl($endpoint),
+                self::requestHeaders(),
                 http_build_query($fields),
-                15
+                self::REQUEST_TIMEOUT
             );
         } catch (Throwable $exception) {
             ErrorHandler::log('[fipe] ' . $endpoint . ': ' . $exception->getMessage());
@@ -214,65 +234,108 @@ class FipeClient
     private static function fullHistory(int $vehicleType, int $brandCode, int $modelCode, array $yearParts): array
     {
         $references = self::references();
-        $points = [];
-        $vehicle = null;
+        $modelYear = (int) $yearParts[1];
+        $fuelCode = (int) $yearParts[2];
+
+        // Um mês por ano (o atual e o mesmo mês de 1 a 5 anos atrás), do mais antigo para o mais novo
+        $months = [];
         for ($yearsAgo = self::HISTORY_YEARS; $yearsAgo >= 0; $yearsAgo--) {
-            $reference = $references[$yearsAgo * 12] ?? null;
-            if ($reference === null) {
+            if (isset($references[$yearsAgo * 12])) {
+                $months[] = $references[$yearsAgo * 12];
+            }
+        }
+
+        // Mês que já passou fica no cache para sempre; só os que faltam vão para a FIPE, todos ao mesmo tempo
+        $prices = [];
+        $missing = [];
+        foreach ($months as $reference) {
+            $cached = self::cache()->get(self::priceCacheKey($reference['code'], $vehicleType, $brandCode, $modelCode, $modelYear, $fuelCode));
+            if ($cached !== null) {
+                $prices[$reference['code']] = $cached['found'] ? $cached['price'] : null;
                 continue;
             }
-            $price = self::priceAt($reference['code'], $vehicleType, $brandCode, $modelCode, (int) $yearParts[1], (int) $yearParts[2]);
+            $missing[$reference['code']] = [
+                'method' => 'POST',
+                'url' => self::apiUrl('ConsultarValorComTodosParametros'),
+                'headers' => self::requestHeaders(),
+                'body' => http_build_query([
+                    'codigoTabelaReferencia' => $reference['code'],
+                    'codigoMarca' => $brandCode,
+                    'codigoModelo' => $modelCode,
+                    'codigoTipoVeiculo' => $vehicleType,
+                    'anoModelo' => $modelYear,
+                    'codigoTipoCombustivel' => $fuelCode,
+                    'tipoVeiculo' => self::VEHICLE_TYPES[$vehicleType],
+                    'modeloCodigoExterno' => '',
+                    'tipoConsulta' => 'tradicional',
+                ]),
+            ];
+        }
+        $answered = 0;
+        if ($missing !== []) {
+            $startedAt = microtime(true);
+            $responses = HttpClient::requestMany($missing, self::REQUEST_TIMEOUT);
+            $seconds = microtime(true) - $startedAt;
+            if ($seconds > 5) {
+                ErrorHandler::log(sprintf('[fipe] histórico demorou %.1f s (%d meses)', $seconds, count($missing)));
+            }
+            foreach ($responses as $referenceCode => [$status, $body]) {
+                $data = json_decode($body, true);
+                if ($status !== 200 || !is_array($data)) {
+                    ErrorHandler::log("[fipe] histórico {$referenceCode}: HTTP {$status} " . mb_substr($body, 0, 200));
+                    continue; // fica sem esse mês (e sem cache, para tentar de novo depois)
+                }
+                $answered++;
+                $price = self::parsePrice($data, $modelYear);
+                self::cache()->set(self::priceCacheKey($referenceCode, $vehicleType, $brandCode, $modelCode, $modelYear, $fuelCode), ['found' => $price !== null, 'price' => $price]);
+                $prices[$referenceCode] = $price;
+            }
+        }
+
+        $points = [];
+        $vehicle = null;
+        foreach ($months as $reference) {
+            $price = $prices[$reference['code']] ?? null;
             if ($price === null) {
-                continue; // o veículo ainda não estava na tabela nesse mês
+                continue; // o veículo ainda não estava na tabela nesse mês (ou a FIPE não respondeu esse mês)
             }
             $vehicle ??= $price['vehicle'];
             $points[] = ['month' => $reference['month'], 'price' => $price['value']];
         }
         if ($points === []) {
+            // A FIPE não respondeu nenhum mês: history() cai para a API reserva
+            if ($missing !== [] && $answered === 0) {
+                throw new FipeException('A Tabela FIPE não respondeu agora. Tente de novo em instantes.', 503);
+            }
             throw new FipeException('Não encontramos preços deste veículo na Tabela FIPE.', 404);
         }
 
         return ['vehicle' => $vehicle, 'points' => $points];
     }
 
-    /**
-     * Preço num mês de referência. Mês que já passou nunca muda: fica no cache para sempre
-     * (inclusive o "não encontrado", para não perguntar de novo).
-     */
-    private static function priceAt(int $referenceCode, int $vehicleType, int $brandCode, int $modelCode, int $modelYear, int $fuelCode): ?array
+    private static function priceCacheKey(int $referenceCode, int $vehicleType, int $brandCode, int $modelCode, int $modelYear, int $fuelCode): string
     {
-        $cacheKey = "price:{$referenceCode}:{$vehicleType}:{$brandCode}:{$modelCode}:{$modelYear}:{$fuelCode}";
-        $cached = self::cache()->get($cacheKey);
-        if ($cached !== null) {
-            return $cached['found'] ? $cached['price'] : null;
+        return "price:{$referenceCode}:{$vehicleType}:{$brandCode}:{$modelCode}:{$modelYear}:{$fuelCode}";
+    }
+
+    /**
+     * Resposta de ConsultarValorComTodosParametros → ['value' => 45000.0, 'vehicle' => [...]] ou null (sem preço nesse mês).
+     */
+    private static function parsePrice(array $data, int $modelYear): ?array
+    {
+        if (!isset($data['Valor'])) {
+            return null;
         }
 
-        $data = self::request('ConsultarValorComTodosParametros', [
-            'codigoTabelaReferencia' => $referenceCode,
-            'codigoMarca' => $brandCode,
-            'codigoModelo' => $modelCode,
-            'codigoTipoVeiculo' => $vehicleType,
-            'anoModelo' => $modelYear,
-            'codigoTipoCombustivel' => $fuelCode,
-            'tipoVeiculo' => self::VEHICLE_TYPES[$vehicleType],
-            'modeloCodigoExterno' => '',
-            'tipoConsulta' => 'tradicional',
-        ]);
-        $price = null;
-        if (isset($data['Valor'])) {
-            $price = [
-                'value' => (float) str_replace(['R$', '.', ',', ' '], ['', '', '.', ''], (string) $data['Valor']),
-                'vehicle' => [
-                    'brand' => (string) ($data['Marca'] ?? ''),
-                    'model' => (string) ($data['Modelo'] ?? ''),
-                    'year' => (int) ($data['AnoModelo'] ?? $modelYear) === self::ZERO_KM_YEAR ? 'Zero km' : (string) ($data['AnoModelo'] ?? $modelYear),
-                    'fuel' => (string) ($data['Combustivel'] ?? ''),
-                    'fipeCode' => (string) ($data['CodigoFipe'] ?? ''),
-                ],
-            ];
-        }
-        self::cache()->set($cacheKey, ['found' => $price !== null, 'price' => $price]);
-
-        return $price;
+        return [
+            'value' => (float) str_replace(['R$', '.', ',', ' '], ['', '', '.', ''], (string) $data['Valor']),
+            'vehicle' => [
+                'brand' => (string) ($data['Marca'] ?? ''),
+                'model' => (string) ($data['Modelo'] ?? ''),
+                'year' => (int) ($data['AnoModelo'] ?? $modelYear) === self::ZERO_KM_YEAR ? 'Zero km' : (string) ($data['AnoModelo'] ?? $modelYear),
+                'fuel' => (string) ($data['Combustivel'] ?? ''),
+                'fipeCode' => (string) ($data['CodigoFipe'] ?? ''),
+            ],
+        ];
     }
 }
