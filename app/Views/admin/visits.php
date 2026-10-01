@@ -61,6 +61,29 @@ $barList = function (array $items, string $color, string $unit): string {
       [$verdictIcon, $verdictClass, $verdictText] = ['➡️', '', 'O tráfego está <b>estável</b> nos últimos ' . $periodName . ' (' . ($trend > 0 ? '+' : '') . format_number($trend, 1) . '% por semana).'];
   }
   $heatMax = max(1, ...array_map('max', $stats['heatmap']));
+
+  // Localização: bandeira + nome do país ("BR" → "🇧🇷 Brasil") e nome do estado ("SP" → "São Paulo")
+  $countryNames = ['BR' => 'Brasil', 'PT' => 'Portugal', 'US' => 'Estados Unidos', 'AR' => 'Argentina', 'PY' => 'Paraguai', 'UY' => 'Uruguai',
+      'CL' => 'Chile', 'BO' => 'Bolívia', 'PE' => 'Peru', 'CO' => 'Colômbia', 'VE' => 'Venezuela', 'MX' => 'México', 'CA' => 'Canadá',
+      'GB' => 'Reino Unido', 'IE' => 'Irlanda', 'ES' => 'Espanha', 'FR' => 'França', 'IT' => 'Itália', 'DE' => 'Alemanha', 'NL' => 'Holanda',
+      'BE' => 'Bélgica', 'CH' => 'Suíça', 'JP' => 'Japão', 'CN' => 'China', 'IN' => 'Índia', 'AO' => 'Angola', 'MZ' => 'Moçambique',
+      'AU' => 'Austrália', 'SG' => 'Singapura', 'AE' => 'Emirados Árabes'];
+  $countryLabel = function (string $code) use ($countryNames): string {
+      $flag = mb_chr(0x1F1E6 + ord($code[0]) - 65) . mb_chr(0x1F1E6 + ord($code[1]) - 65);
+      $name = $countryNames[$code] ?? (class_exists('Locale') ? \Locale::getDisplayRegion('-' . $code, 'pt_BR') : $code);
+
+      return $flag . ' ' . $name;
+  };
+  $states = \App\Services\Holidays::states();
+  $countries = [];
+  foreach ($stats['countries'] as $code => $count) {
+      $countries[$countryLabel($code)] = $count;
+  }
+  $brazilianStates = [];
+  foreach ($stats['brazilian_states'] as $code => $count) {
+      $brazilianStates[$states[strtolower($code)]['name'] ?? $code] = $count;
+  }
+  $locatedShare = $period['visitors'] > 0 ? round($stats['located_visitors'] / $period['visitors'] * 100) : 0;
   $deviceNames = ['celular' => '📱 Celular', 'computador' => '💻 Computador', 'tablet' => '📟 Tablet'];
   $devices = [];
   foreach ($stats['devices'] as $device => $count) {
@@ -152,8 +175,8 @@ $barList = function (array $items, string $color, string $unit): string {
       <div class="chart-box"><canvas id="chart-months" aria-label="Visitantes por mês"></canvas></div>
     </section>
     <section class="admin-card">
-      <div class="card-head"><h3>Por hora</h3><p class="chart-legend"><span><i class="legend-1"></i>Hoje</span><span><i class="legend-3"></i>Ontem</span></p></div>
-      <div class="chart-box"><canvas id="chart-hours" aria-label="Visitantes por hora, hoje e ontem"></canvas></div>
+      <div class="card-head"><h3>Por hora</h3><p class="chart-legend"><span><i class="legend-1"></i>Hoje</span><span><i class="legend-3"></i>Ontem</span><span><i class="legend-2"></i>Média dos últimos <?= e($periodName) ?></span></p></div>
+      <div class="chart-box"><canvas id="chart-hours" aria-label="Visitantes por hora: hoje, ontem e a média do período"></canvas></div>
     </section>
   </div>
 
@@ -176,6 +199,12 @@ $barList = function (array $items, string $color, string $unit): string {
     <p class="chart-legend heatmap-legend"><span>menos</span><i style="--level:.08"></i><i style="--level:.3"></i><i style="--level:.55"></i><i style="--level:.8"></i><i style="--level:1"></i><span>mais</span></p>
   </section>
 
+  <div class="admin-two">
+    <section class="admin-card"><h3>Países</h3><?= $barList($countries, 'var(--vis-1)', 'pessoas') ?></section>
+    <section class="admin-card"><h3>Estados do Brasil</h3><?= $barList($brazilianStates, 'var(--vis-2)', 'pessoas') ?></section>
+  </div>
+  <p class="admin-footnote">Localização aproximada informada pelo Cloudflare (o IP não é guardado): <?= $locatedShare ?>% dos visitantes do período têm país registrado; as visitas de antes desta função ficam sem localização. Os estados só aparecem com "Add visitor location headers" ligado no Cloudflare (Rules → Transform Rules → Managed Transforms).</p>
+
   <div class="admin-three">
     <section class="admin-card"><h3>Páginas mais vistas</h3><?= $barList($stats['pages'], 'var(--vis-2)', 'vistas') ?></section>
     <section class="admin-card"><h3>De onde vêm</h3><?= $barList($stats['sources'], 'var(--vis-1)', 'pessoas') ?></section>
@@ -191,6 +220,7 @@ $barList = function (array $items, string $color, string $unit): string {
       'months' => array_map(fn (string $month, int $visitors) => ['label' => $monthNames[(int) substr($month, 5) - 1] . '/' . substr($month, 2, 2), 'visitors' => $visitors], array_keys($stats['months']), $stats['months']),
       'projection' => $stats['month_projection'],
       'hours' => $stats['hours'],
+      'hourAverage' => $stats['hour_average'],
       'hourNow' => $stats['hour_now'],
       'online' => $online['now'],
   ];

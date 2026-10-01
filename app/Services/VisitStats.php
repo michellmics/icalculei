@@ -127,7 +127,32 @@ class VisitStats
             $heatmap[(int) $row['weekday']][(int) $row['hour']] = (int) $row['page_views'];
         }
 
+        // Média de visitantes em cada hora do dia, no período escolhido (o "horário típico" do site)
+        $hourAverage = array_fill(0, 24, 0);
+        $hourAverageRows = Database::fetchAll(
+            'SELECT HOUR(created_at) AS hour, COUNT(DISTINCT visitor, DATE(created_at)) AS visitors FROM visits WHERE created_at >= :from GROUP BY hour',
+            ['from' => $periodStart]
+        );
+        foreach ($hourAverageRows as $row) {
+            $hourAverage[(int) $row['hour']] = round((int) $row['visitors'] / $days, 1);
+        }
+
+        // Localização (Cloudflare): países e estados do Brasil, em visitantes únicos
+        $countries = Database::fetchPairs(
+            'SELECT country, COUNT(DISTINCT visitor) AS total FROM visits WHERE created_at >= :from AND country IS NOT NULL GROUP BY country ORDER BY total DESC LIMIT 10',
+            ['from' => $periodStart]
+        );
+        $brazilianStates = Database::fetchPairs(
+            "SELECT region, COUNT(DISTINCT visitor) AS total FROM visits WHERE created_at >= :from AND country = 'BR' AND region IS NOT NULL GROUP BY region ORDER BY total DESC LIMIT 12",
+            ['from' => $periodStart]
+        );
+        $locatedVisitors = (int) Database::fetchValue('SELECT COUNT(DISTINCT visitor) FROM visits WHERE created_at >= :from AND country IS NOT NULL', ['from' => $periodStart]);
+
         return [
+            'hour_average' => $hourAverage,
+            'countries' => $countries,
+            'brazilian_states' => $brazilianStates,
+            'located_visitors' => $locatedVisitors,
             'today' => $today,
             'yesterday_until_now' => $yesterdayUntilNow,
             'yesterday' => $yesterday,

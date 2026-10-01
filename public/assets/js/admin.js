@@ -170,6 +170,8 @@
         datasets: [
           line(COLORS.primary, { label: "Hoje", data: visitsData.hours.today.map((value, hour) => (hour <= visitsData.hourNow ? value : null)), pointRadius: 2 }),
           line(COLORS.tertiary, { label: "Ontem", data: visitsData.hours.yesterday, borderDash: [5, 4] }),
+          // Média do período: o horário típico do site, sem o sobe e desce de um dia só
+          line(COLORS.secondary, { label: "Média do período", data: visitsData.hourAverage, fill: true, backgroundColor: "rgba(58, 111, 216, .10)" }),
         ],
       },
       options: baseOptions,

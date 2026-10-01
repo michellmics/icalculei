@@ -42,6 +42,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 ## Estrutura
 - `public/index.php` rotas · `app/Controllers` (Site, Visit = contador, Admin = painel) · `app/Views`
 - `app/Services/VisitStats.php` números do painel (modelo do painel do projeto direitaconservada)
+- Localização das visitas (colunas `country`/`region` de `visits`, migration 006): vem dos cabeçalhos do Cloudflare `CF-IPCountry` e `cf-region-code` (`VisitController::detectLocation`); o IP não é guardado. Estados só com "Add visitor location headers" ligado no Cloudflare (Rules → Transform Rules → Managed Transforms).
 - `database/migrations/*.sql` + `php bin/migrate.php` (lógica em `app/Services/Migrator.php`) · login do painel: `ADMIN_USER` e `ADMIN_PASSWORD` no `.env`
 
 ## Atualizar produção

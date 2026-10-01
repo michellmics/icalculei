@@ -11,11 +11,14 @@ use App\Core\Database;
  */
 class Visit
 {
-    public static function recordPageView(string $visitor, bool $isNew, string $page, string $source, string $device): void
+    /**
+     * $country: código do país ("BR"); $region: código do estado ("SP"). Null quando o Cloudflare não informa.
+     */
+    public static function recordPageView(string $visitor, bool $isNew, string $page, string $source, string $device, ?string $country, ?string $region): void
     {
         Database::insert(
-            'INSERT INTO visits (visitor, is_new, page, source, device) VALUES (:visitor, :is_new, :page, :source, :device)',
-            ['visitor' => $visitor, 'is_new' => $isNew ? 1 : 0, 'page' => $page, 'source' => $source, 'device' => $device]
+            'INSERT INTO visits (visitor, is_new, page, source, device, country, region) VALUES (:visitor, :is_new, :page, :source, :device, :country, :region)',
+            ['visitor' => $visitor, 'is_new' => $isNew ? 1 : 0, 'page' => $page, 'source' => $source, 'device' => $device, 'country' => $country, 'region' => $region]
         );
     }
 

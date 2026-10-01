@@ -83,7 +83,8 @@ class VisitController
 
             $page = $this->pageLabel((string) ($input['p'] ?? ''));
             if ($type === 'ver') {
-                Visit::recordPageView($visitor, $isNewVisitor, $page, $this->detectSource($input, $host), $device);
+                [$country, $region] = $this->detectLocation();
+                Visit::recordPageView($visitor, $isNewVisitor, $page, $this->detectSource($input, $host), $device, $country, $region);
                 if ($isNewVisitor) {
                     $this->countNewVisitor();
                 }
@@ -110,6 +111,24 @@ class VisitController
         } catch (Throwable $exception) {
             ErrorHandler::log('[push] contador de visitantes: ' . $exception->getMessage());
         }
+    }
+
+    /**
+     * País e estado aproximados, informados pelo Cloudflare em cada pedido (o IP não é guardado):
+     *   CF-IPCountry   país ("BR"); vem ligado por padrão
+     *   cf-region-code estado ("SP"); só com "Add visitor location headers" ligado em
+     *                  Cloudflare → Rules → Transform Rules → Managed Transforms
+     * Sem Cloudflare (desenvolvimento) ou país desconhecido ("XX", "T1" = Tor): [null, null].
+     */
+    private function detectLocation(): array
+    {
+        $country = strtoupper((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? ''));
+        if (preg_match('/^[A-Z]{2}$/', $country) !== 1 || in_array($country, ['XX', 'T1'], true)) {
+            return [null, null];
+        }
+        $region = strtoupper((string) ($_SERVER['HTTP_CF_REGION_CODE'] ?? ''));
+
+        return [$country, preg_match('/^[A-Z0-9]{1,3}$/', $region) === 1 ? $region : null];
     }
 
     /**
