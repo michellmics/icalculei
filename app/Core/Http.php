@@ -58,8 +58,7 @@ class Http
         $policy = [
             "default-src 'self'",
             // static.cloudflareinsights.com: estatísticas do Cloudflare (Web Analytics), que ele injeta nas páginas
-            // *.profitableratecpmnetwork.com: anúncio (script no topo do layout do site)
-            "script-src 'self' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://*.profitableratecpmnetwork.com" .($adsEnabled ? ' ' . $googleAdHosts : ''),
+            "script-src 'self' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com" . ($adsEnabled ? ' ' . $googleAdHosts : ''),
             // cdnjs: estilo do mapa (Leaflet) da calculadora de viagem
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
             "font-src 'self'",

@@ -72,7 +72,6 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <?php if (Ads::isEnabled()): ?>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= e(config('adsense_client')) ?>" crossorigin="anonymous"></script>
   <?php endif; ?>
-  <script src="https://pl31605902.profitableratecpmnetwork.com/d2/7e/73/d27e73b2cc1998fc71cc92b397cd3fb9.js"></script>
 </head>
 
 <body data-page="<?= e($pageKey) ?>">
@@ -160,7 +159,6 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <?php if ($usesCalculators): ?>
     <script src="<?= e(asset('js/calculators.js')) ?>" defer></script>
   <?php endif; ?>
-  <script src="https://pl31605903.profitableratecpmnetwork.com/ce/c3/bc/cec3bcdcc511135f24cc3107594be6c6.js"></script>
 </body>
 
 </html>
