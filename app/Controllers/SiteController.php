@@ -243,7 +243,15 @@ class SiteController
         $body = "Nova mensagem no iCalculei\n\nNome: {$input['name']}\nE-mail: {$input['email']}\n\n{$input['message']}\n\nVeja no painel: " . url('/painel/mensagens');
         // O e-mail da pessoa vai no Reply-To (sem quebras de linha, contra injeção de cabeçalho)
         $replyTo = str_replace(["\r", "\n"], '', $input['email']);
-        if (!@mail($contactEmail, '=?UTF-8?B?' . base64_encode($subjectLine) . '?=', $body, "Content-Type: text/plain; charset=UTF-8\r\nReply-To: {$replyTo}")) {
+        $headers = "Content-Type: text/plain; charset=UTF-8\r\nReply-To: {$replyTo}";
+        // Remetente do próprio domínio (MAIL_FROM_ADDRESS): sem ele o cPanel usa usuario@servidor e o DMARC reprova
+        $from = str_replace(["\r", "\n"], '', (string) config('mail_from'));
+        $extraParameters = '';
+        if ($from !== '') {
+            $headers .= "\r\nFrom: iCalculei <{$from}>";
+            $extraParameters = '-f' . $from;
+        }
+        if (!@mail($contactEmail, '=?UTF-8?B?' . base64_encode($subjectLine) . '?=', $body, $headers, $extraParameters)) {
             ErrorHandler::log('Falha ao enviar e-mail de aviso de contato');
         }
     }

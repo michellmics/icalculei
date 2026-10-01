@@ -38,6 +38,7 @@ function config(string $key): mixed
         'adsense_client' => Env::get('ADSENSE_CLIENT', ''),
         'ads_placeholders' => Env::getBool('ADS_PLACEHOLDERS', false),
         'contact_email' => Env::get('CONTACT_EMAIL', ''),
+        'mail_from' => Env::get('MAIL_FROM_ADDRESS', ''),
         'owner_name' => Env::get('SITE_OWNER_NAME', ''),
         'owner_document' => Env::get('SITE_OWNER_DOCUMENT', ''),
         'owner_city' => Env::get('SITE_OWNER_CITY', ''),
