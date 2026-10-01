@@ -43,6 +43,14 @@ class FipeClient
         return ($proxyUrl !== '' ? $proxyUrl . '/api/veiculos' : self::BASE_URL) . '/' . $endpoint;
     }
 
+    /**
+     * "via Worker" ou "direto", para o log mostrar por onde o pedido foi.
+     */
+    private static function route(): string
+    {
+        return config('fipe_proxy_url') !== '' ? 'via Worker' : 'direto';
+    }
+
     private static function requestHeaders(): array
     {
         $proxyKey = (string) config('fipe_proxy_key');
@@ -69,12 +77,12 @@ class FipeClient
                 self::REQUEST_TIMEOUT
             );
         } catch (Throwable $exception) {
-            ErrorHandler::log('[fipe] ' . $endpoint . ': ' . $exception->getMessage());
+            ErrorHandler::log('[fipe] ' . $endpoint . ' (' . self::route() . '): ' . $exception->getMessage());
             throw new FipeException('A Tabela FIPE não respondeu agora. Tente de novo em instantes.', 503);
         }
         $data = json_decode($body, true);
         if ($status !== 200 || !is_array($data)) {
-            ErrorHandler::log("[fipe] {$endpoint}: HTTP {$status} " . mb_substr($body, 0, 200));
+            ErrorHandler::log("[fipe] {$endpoint} (" . self::route() . "): HTTP {$status} " . self::bodySummary($body));
             throw new FipeException('A Tabela FIPE não respondeu agora. Tente de novo em instantes.', 503);
         }
 
@@ -282,7 +290,7 @@ class FipeClient
             foreach ($responses as $referenceCode => [$status, $body]) {
                 $data = json_decode($body, true);
                 if ($status !== 200 || !is_array($data)) {
-                    ErrorHandler::log("[fipe] histórico {$referenceCode}: HTTP {$status} " . mb_substr($body, 0, 200));
+                    ErrorHandler::log("[fipe] histórico {$referenceCode} (" . self::route() . "): HTTP {$status} " . self::bodySummary($body));
                     continue; // fica sem esse mês (e sem cache, para tentar de novo depois)
                 }
                 $answered++;
@@ -311,6 +319,18 @@ class FipeClient
         }
 
         return ['vehicle' => $vehicle, 'points' => $points];
+    }
+
+    /**
+     * Resumo da resposta para o log: o título da página de bloqueio (ex.: "Attention Required! | Cloudflare") ou o começo do texto.
+     */
+    private static function bodySummary(string $body): string
+    {
+        if (preg_match('#<title>(.*?)</title>#is', $body, $title)) {
+            return 'página "' . trim(html_entity_decode(strip_tags($title[1]))) . '"';
+        }
+
+        return mb_substr(trim((string) preg_replace('/\s+/', ' ', $body)), 0, 160);
     }
 
     private static function priceCacheKey(int $referenceCode, int $vehicleType, int $brandCode, int $modelCode, int $modelYear, int $fuelCode): string

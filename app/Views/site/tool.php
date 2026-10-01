@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Página de uma calculadora: /calculadoras/{id}
  * Os campos são montados pelo calculators.js; o texto explicativo vem do servidor (bom para o Google).
@@ -8,6 +9,7 @@
  * @var array $relatedTools
  * @var array $relatedNews
  */
+
 use App\Core\View;
 use App\Services\Ads;
 ?>
@@ -24,12 +26,17 @@ use App\Services\Ads;
       <?php if ($tool['ready']): ?>
         <h2 class="visually-hidden">Calcule aqui</h2>
         <section class="calculator" id="calculator" data-tool="<?= e($tool['id']) ?>" aria-live="polite">
-          <noscript><div class="coming-soon">Esta calculadora precisa do JavaScript ativado no navegador.</div></noscript>
+          <noscript>
+            <div class="coming-soon">Esta calculadora precisa do JavaScript ativado no navegador.</div>
+          </noscript>
         </section>
-        <?php // Sem "defer" de propósito: a calculadora é desenhada antes do texto de baixo aparecer, e a página não "pula" (CLS) ?>
+        <?php // Sem "defer" de propósito: a calculadora é desenhada antes do texto de baixo aparecer, e a página não "pula" (CLS) 
+        ?>
         <script src="<?= e(asset('js/calculators.js')) ?>"></script>
       <?php else: ?>
-        <section class="calculator"><div class="coming-soon"><b>Em breve.</b> Esta calculadora ainda está em preparação.</div></section>
+        <section class="calculator">
+          <div class="coming-soon"><b>Em breve.</b> Esta calculadora ainda está em preparação.</div>
+        </section>
       <?php endif; ?>
 
 
@@ -50,7 +57,7 @@ use App\Services\Ads;
         </ul>
       </section>
       <section class="side-box">
-        <h3>Notícias</h3>
+        <h3>Notícias </h3>
         <ul class="link-list">
           <?php foreach ($relatedNews as $article): ?>
             <?= View::partial('link-item', ['href' => '/noticias/' . $article['id'], 'image' => news_image_small($article), 'title' => $article['title'], 'subtitle' => format_date($article['date'])]) ?>

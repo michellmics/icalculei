@@ -38,7 +38,7 @@
       <div class="field"><label for="admin-user">Usuário</label><input id="admin-user" name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
       <div class="field"><label for="admin-password">Senha</label><input id="admin-password" name="password" type="password" autocomplete="current-password" required></div>
       <?php if ($canRemember): ?>
-        <label class="check"><input type="checkbox" name="remember" value="1" checked> Manter conectado</label>
+        <label class="check"><input type="checkbox" name="remember" value="1" checked> Lembrar</label>
       <?php endif; ?>
       <button type="submit" class="action-button">entrar</button>
       <a class="secondary-button" href="/">voltar ao site</a>
