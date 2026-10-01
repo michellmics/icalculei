@@ -3852,6 +3852,699 @@
       },
     },
 
+    "json-csv": {
+      html: `        <div class="calculator-body">
+          <div class="segmented" id="csv-direction" role="group" aria-label="Direção">
+            <button type="button" data-value="json-to-csv" aria-pressed="true">JSON → CSV</button>
+            <button type="button" data-value="csv-to-json" aria-pressed="false">CSV → JSON</button>
+          </div>
+          <div class="field"><label for="csv-input" id="csv-input-label">JSON (lista de objetos)</label><textarea id="csv-input" spellcheck="false" rows="9" class="mono-input">[{"id":1,"nome":"Ana","cidade":"São Paulo","salario":4500.5,"endereco":{"uf":"SP","cep":"01000-000"}},{"id":2,"nome":"Bruno","cidade":"Recife","salario":3200,"endereco":{"uf":"PE","cep":"50000-000"}}]</textarea></div>
+          <div class="field"><label for="csv-file">Ou abra um arquivo (até 50 MB)</label><input id="csv-file" type="file" accept=".json,.csv,.txt,application/json,text/csv,text/plain"><span class="field-hint" id="csv-file-info">O arquivo é lido no seu navegador e não é enviado para lugar nenhum.</span></div>
+          <div class="field-row">
+            <div class="field"><label for="csv-separator">Separador do CSV</label><select id="csv-separator">
+              <option value=";">; Excel em português (vírgula nos decimais)</option>
+              <option value=",">, padrão internacional</option>
+              <option value="tab">Tab</option>
+            </select></div>
+          </div>
+          <label class="check" id="csv-flatten-option"><input type="checkbox" id="csv-flatten" checked> Separar objetos dentro de objetos em colunas (endereco.uf, endereco.cep)</label>
+        </div>
+        <div id="csv-result"></div>`,
+      setup() {
+        const MAX_FILE_BYTES = 50 * 1024 * 1024;
+        const TEXTAREA_LIMIT = 1024 * 1024;
+        const PREVIEW_CHARACTERS = 200000;
+        const PREVIEW_ROWS = 50;
+        const input = document.getElementById("csv-input");
+        let direction = "json-to-csv";
+        let fileText = null;
+        let fileName = "";
+        let output = { text: "", extension: "csv", type: "text/csv" };
+        const separator = () => (document.getElementById("csv-separator").value === "tab" ? "\t" : document.getElementById("csv-separator").value);
+        const isExcelBr = () => document.getElementById("csv-separator").value === ";";
+
+        // "usuario": {"nome": "Ana"} → coluna "usuario.nome"; listas viram texto JSON
+        function flatten(value, prefix, row, shouldFlatten) {
+          Object.entries(value).forEach(([key, item]) => {
+            const column = prefix ? `${prefix}.${key}` : key;
+            if (shouldFlatten && item && typeof item === "object" && !Array.isArray(item)) {
+              flatten(item, column, row, shouldFlatten);
+            } else {
+              row[column] = item;
+            }
+          });
+          return row;
+        }
+        function csvCell(value, separatorText) {
+          let text;
+          if (value === null || value === undefined) {
+            text = "";
+          } else if (typeof value === "object") {
+            text = JSON.stringify(value);
+          } else if (typeof value === "number" && isExcelBr()) {
+            text = String(value).replace(".", ","); // Excel em português lê 4500,5
+          } else {
+            text = String(value);
+          }
+          // Campo com separador, aspas ou quebra de linha vai entre aspas (aspas internas dobradas)
+          return text.includes(separatorText) || /["\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        }
+        function jsonToCsv(text) {
+          let data = JSON.parse(text);
+          if (!Array.isArray(data)) {
+            // Objeto com uma lista dentro (ex.: {"itens": [...]}): usa a lista; senão vira uma linha só
+            const innerList = data && typeof data === "object" ? Object.values(data).find(Array.isArray) : null;
+            data = innerList ?? [data];
+          }
+          const shouldFlatten = document.getElementById("csv-flatten").checked;
+          const rows = data.map((item) => (item && typeof item === "object" && !Array.isArray(item) ? flatten(item, "", {}, shouldFlatten) : { valor: item }));
+          const columns = [];
+          rows.forEach((row) => Object.keys(row).forEach((column) => { if (!columns.includes(column)) columns.push(column); }));
+          const separatorText = separator();
+          const lines = [columns.map((column) => csvCell(column, separatorText)).join(separatorText)];
+          rows.forEach((row) => lines.push(columns.map((column) => csvCell(row[column], separatorText)).join(separatorText)));
+          return { columns, rows: rows.map((row) => columns.map((column) => row[column])), text: lines.join("\r\n") };
+        }
+        // Lê CSV com campos entre aspas (inclusive com quebra de linha dentro)
+        function parseCsv(text, separatorText) {
+          const rows = [];
+          let row = [];
+          let cell = "";
+          let insideQuotes = false;
+          for (let index = 0; index < text.length; index++) {
+            const character = text[index];
+            if (insideQuotes) {
+              if (character === '"' && text[index + 1] === '"') {
+                cell += '"';
+                index++;
+              } else if (character === '"') {
+                insideQuotes = false;
+              } else {
+                cell += character;
+              }
+            } else if (character === '"') {
+              insideQuotes = true;
+            } else if (character === separatorText) {
+              row.push(cell);
+              cell = "";
+            } else if (character === "\n" || character === "\r") {
+              if (character === "\r" && text[index + 1] === "\n") {
+                index++;
+              }
+              row.push(cell);
+              rows.push(row);
+              row = [];
+              cell = "";
+            } else {
+              cell += character;
+            }
+          }
+          if (cell !== "" || row.length) {
+            row.push(cell);
+            rows.push(row);
+          }
+          return rows.filter((cells) => cells.some((value) => value !== ""));
+        }
+        // Separador mais frequente na primeira linha
+        function detectSeparator(text) {
+          const firstLine = text.slice(0, text.indexOf("\n") === -1 ? text.length : text.indexOf("\n"));
+          return [";", ",", "\t"].reduce((best, candidate) => (firstLine.split(candidate).length > firstLine.split(best).length ? candidate : best), ";");
+        }
+        // "4500,5" e "4500.5" viram número; true/false viram booleano; o resto continua texto (CEP com zero à esquerda também)
+        function typedValue(text, separatorText) {
+          const trimmed = text.trim();
+          if (/^(true|false)$/i.test(trimmed)) {
+            return trimmed.toLowerCase() === "true";
+          }
+          const numberText = separatorText === ";" ? trimmed.replace(",", ".") : trimmed;
+          return /^-?(0|[1-9]\d*)(\.\d+)?$/.test(numberText) && numberText.length < 16 ? Number(numberText) : text;
+        }
+        function csvToJson(text) {
+          const separatorText = detectSeparator(text);
+          const [header = [], ...lines] = parseCsv(text.replace(/^﻿/, ""), separatorText);
+          const objects = lines.map((cells) => Object.fromEntries(header.map((column, index) => [column.trim() || `coluna${index + 1}`, typedValue(cells[index] ?? "", separatorText)])));
+          return { columns: header, rows: lines, objects, separatorText, text: JSON.stringify(objects, null, 2) };
+        }
+
+        function previewTable(columns, rows) {
+          const shownColumns = columns.slice(0, 20);
+          const head = shownColumns.map((column) => `<th>${escapeHtml(String(column))}</th>`).join("");
+          const body = rows.slice(0, PREVIEW_ROWS).map((cells) => `<tr>${shownColumns.map((_, index) => {
+            const value = cells[index];
+            return `<td>${escapeHtml(value === null || value === undefined ? "" : typeof value === "object" ? JSON.stringify(value) : String(value))}</td>`;
+          }).join("")}</tr>`).join("");
+          return `<div class="table-scroll csv-preview"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+        }
+
+        function calculate() {
+          const text = fileText ?? input.value;
+          const resultBox = document.getElementById("csv-result");
+          const isJsonToCsv = direction === "json-to-csv";
+          if (text.trim() === "") {
+            resultBox.innerHTML = emptyDisplay(isJsonToCsv ? "CSV" : "JSON", isJsonToCsv ? "Cole um JSON ou abra um arquivo." : "Cole um CSV ou abra um arquivo.");
+            return;
+          }
+          let converted;
+          try {
+            converted = isJsonToCsv ? jsonToCsv(text) : csvToJson(text);
+          } catch (error) {
+            resultBox.innerHTML = display("JSON inválido", "—", `${escapeHtml(error.message)}. Confira no <a href="/calculadoras/json-formatter">JSON formatter</a>, que mostra a linha do erro.`);
+            return;
+          }
+          output = isJsonToCsv
+            ? { text: (isExcelBr() ? "﻿" : "") + converted.text, extension: "csv", type: "text/csv;charset=utf-8" } // BOM: o Excel reconhece os acentos
+            : { text: converted.text, extension: "json", type: "application/json" };
+          const lineCount = converted.rows.length;
+          const separatorName = { ";": "ponto e vírgula", ",": "vírgula", "\t": "tab" }[converted.separatorText] ?? "";
+          const label = isJsonToCsv
+            ? `CSV · ${formatNumber(lineCount)} linhas · ${formatNumber(converted.columns.length)} colunas`
+            : `JSON · ${formatNumber(lineCount)} objetos · separador detectado: ${separatorName}`;
+          const preview = converted.text.length > PREVIEW_CHARACTERS ? `${converted.text.slice(0, PREVIEW_CHARACTERS)}\n\n… (resultado grande: use "copiar" ou "baixar")` : converted.text;
+          resultBox.innerHTML = `<div class="display"><span class="display-label">${label}</span>
+            ${previewTable(converted.columns, converted.rows)}${lineCount > PREVIEW_ROWS ? `<span class="display-detail">Tabela mostra as primeiras ${PREVIEW_ROWS} linhas.</span>` : ""}
+            <pre class="display-text jwt-json" id="csv-output">${escapeHtml(preview)}</pre>
+            <div class="button-row"><button class="copy-button" type="button" id="csv-copy">copiar</button><button class="copy-button" type="button" id="csv-download">baixar .${output.extension}</button></div></div>`;
+          document.getElementById("csv-copy").addEventListener("click", async (clickEvent) => {
+            try {
+              await navigator.clipboard.writeText(output.text.replace(/^﻿/, ""));
+              clickEvent.currentTarget.textContent = "copiado!";
+            } catch {
+              clickEvent.currentTarget.textContent = "não foi possível copiar: use baixar";
+            }
+          });
+          document.getElementById("csv-download").addEventListener("click", () => {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([output.text], { type: output.type }));
+            link.download = `${fileName.replace(/\.(json|csv|txt)$/i, "") || "convertido"}.${output.extension}`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+          });
+        }
+
+        setupSegmented("csv-direction", (value) => {
+          direction = value;
+          const isJsonToCsv = value === "json-to-csv";
+          document.getElementById("csv-input-label").textContent = isJsonToCsv ? "JSON (lista de objetos)" : "CSV (a primeira linha é o cabeçalho)";
+          document.getElementById("csv-flatten-option").hidden = !isJsonToCsv;
+          document.getElementById("csv-separator").closest(".field").hidden = !isJsonToCsv;
+          if (fileText === null) {
+            input.value = isJsonToCsv
+              ? '[{"id":1,"nome":"Ana","cidade":"São Paulo","salario":4500.5},{"id":2,"nome":"Bruno","cidade":"Recife","salario":3200}]'
+              : "id;nome;cidade;salario\n1;Ana;São Paulo;4500,5\n2;Bruno;Recife;3200";
+          }
+          calculate();
+        });
+        input.addEventListener("input", () => {
+          fileText = null;
+          fileName = "";
+          document.getElementById("csv-file-info").textContent = "O arquivo é lido no seu navegador e não é enviado para lugar nenhum.";
+          calculate();
+        });
+        document.getElementById("csv-file").addEventListener("change", async (changeEvent) => {
+          const file = changeEvent.target.files[0];
+          const info = document.getElementById("csv-file-info");
+          if (!file) {
+            return;
+          }
+          if (file.size > MAX_FILE_BYTES) {
+            info.textContent = "Arquivo maior que 50 MB: grande demais para converter no navegador.";
+            return;
+          }
+          const text = await file.text();
+          fileName = file.name;
+          if (text.length > TEXTAREA_LIMIT) {
+            fileText = text;
+            input.value = "";
+            input.placeholder = `Arquivo ${file.name} carregado (grande demais para mostrar aqui).`;
+          } else {
+            fileText = null;
+            input.value = text;
+          }
+          info.textContent = `Arquivo: ${file.name}`;
+          calculate();
+        });
+        onInputs(["csv-separator", "csv-flatten"], calculate);
+      },
+    },
+
+    "regex": {
+      html: `        <div class="calculator-body">
+          <div class="field"><label for="regex-preset">Comece com um padrão pronto (opcional)</label><select id="regex-preset"><option value="">Escolha para preencher…</option></select></div>
+          <div class="field"><label for="regex-pattern">Expressão regular</label><div class="regex-input"><span aria-hidden="true">/</span><input id="regex-pattern" class="mono-input" spellcheck="false" autocomplete="off" value="\\b\\d{5}-?\\d{3}\\b"><span aria-hidden="true">/</span></div></div>
+          <div class="regex-flags" role="group" aria-label="Opções (flags)">
+            <label class="check"><input type="checkbox" id="regex-flag-g" checked> <b>g</b> todas as ocorrências</label>
+            <label class="check"><input type="checkbox" id="regex-flag-i"> <b>i</b> ignora maiúsculas</label>
+            <label class="check"><input type="checkbox" id="regex-flag-m"> <b>m</b> ^ e $ por linha</label>
+            <label class="check"><input type="checkbox" id="regex-flag-s"> <b>s</b> ponto pega quebra de linha</label>
+            <label class="check"><input type="checkbox" id="regex-flag-u"> <b>u</b> unicode</label>
+          </div>
+          <div class="field"><label for="regex-text">Texto para testar</label><textarea id="regex-text" spellcheck="false" rows="6" class="mono-input">Entrega na Av. Paulista, 1000 - CEP 01310-100, São Paulo.
+Retirada: Rua da Aurora, 50, CEP 50050000, Recife.
+Código inválido: 1234-567</textarea></div>
+          <div class="field"><label for="regex-replace">Substituir por (opcional; use $1, $2 para os grupos)</label><input id="regex-replace" class="mono-input" spellcheck="false" autocomplete="off" placeholder="ex.: [CEP]"></div>
+        </div>
+        <div id="regex-result"></div>`,
+      setup() {
+        const MAX_TEXT = 200000;
+        const MAX_MATCHES = 1000;
+        // Padrões prontos para começar (o "criador"): ajustados para formatos brasileiros
+        const PRESETS = [
+          ["E-mail", "[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+", "i", "Fale com ana.silva@empresa.com.br ou suporte+site@exemplo.com"],
+          ["CPF (com ou sem pontos)", "\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b", "", "CPF 123.456.789-09 ou 12345678909"],
+          ["CNPJ (com ou sem pontos)", "\\b\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2}\\b", "", "CNPJ 12.345.678/0001-95 ou 12345678000195"],
+          ["CEP", "\\b\\d{5}-?\\d{3}\\b", "", "CEP 01310-100 e 50050000"],
+          ["Telefone com DDD", "\\(?\\b\\d{2}\\)?\\s?9?\\d{4}-?\\d{4}\\b", "", "Ligue (11) 98765-4321 ou 81 3333-4444"],
+          ["Data dd/mm/aaaa", "\\b(0[1-9]|[12]\\d|3[01])\\/(0[1-9]|1[0-2])\\/(\\d{4})\\b", "", "Vencimento 05/11/2026; início 31/12/2025; errado 32/13/2026"],
+          ["Hora hh:mm", "\\b([01]\\d|2[0-3]):[0-5]\\d\\b", "", "Abre 08:30, fecha 18:00, inválido 25:61"],
+          ["Placa de carro (Mercosul e antiga)", "\\b[A-Z]{3}-?\\d[A-Z\\d]\\d{2}\\b", "i", "Placas ABC1D23, ABC-1234 e XYZ9876"],
+          ["Valor em reais", "R\\$\\s?\\d{1,3}(\\.\\d{3})*(,\\d{2})?", "", "Total R$ 1.234,56, frete R$ 20,00 e taxa R$5"],
+          ["URL", "https?:\\/\\/[\\w.-]+(\\/[\\w\\-./?%&=#]*)?", "i", "Veja https://vibe2000.com.br/calculadoras e http://exemplo.com/a?b=1"],
+          ["Endereço IPv4", "\\b((25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b", "", "Servidores 192.168.0.1 e 10.0.0.254; inválido 300.1.1.1"],
+          ["Cor HEX", "#([0-9a-f]{6}|[0-9a-f]{3})\\b", "i", "Cores #0e6b4f, #FFF e #12345 (inválida)"],
+          ["Senha forte (8+, maiúscula, minúscula, número)", "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", "m", "fraca123\nForte2026\nSemNumero"],
+          ["Palavras repetidas seguidas", "\\b(\\w+)\\s+\\1\\b", "gi", "Isso é é um teste com com palavras repetidas."],
+          ["Espaços sobrando no fim da linha", "[ \\t]+$", "m", "linha com espaço   \nlinha certa\noutra com tab\t"],
+        ];
+        const presetSelect = document.getElementById("regex-preset");
+        presetSelect.innerHTML += PRESETS.map(([name], index) => `<option value="${index}">${escapeHtml(name)}</option>`).join("");
+        presetSelect.addEventListener("change", () => {
+          const preset = PRESETS[Number(presetSelect.value)];
+          if (!preset) {
+            return;
+          }
+          const [, pattern, flags, sample] = preset;
+          document.getElementById("regex-pattern").value = pattern;
+          ["g", "i", "m", "s", "u"].forEach((flag) => { document.getElementById(`regex-flag-${flag}`).checked = flag === "g" || flags.includes(flag); });
+          document.getElementById("regex-text").value = sample;
+          calculate();
+        });
+
+        function calculate() {
+          const pattern = document.getElementById("regex-pattern").value;
+          const text = document.getElementById("regex-text").value.slice(0, MAX_TEXT);
+          const replacement = document.getElementById("regex-replace").value;
+          const flags = ["g", "i", "m", "s", "u"].filter((flag) => document.getElementById(`regex-flag-${flag}`).checked).join("");
+          const resultBox = document.getElementById("regex-result");
+          if (pattern === "") {
+            resultBox.innerHTML = emptyDisplay("Ocorrências", "Digite a expressão regular.");
+            return;
+          }
+          let regex;
+          try {
+            regex = new RegExp(pattern, flags.includes("g") ? flags : flags + "g"); // g interno para listar; sem g mostra só a 1ª
+          } catch (error) {
+            resultBox.innerHTML = display("Expressão inválida", "—", escapeHtml(error.message.replace(/^Invalid regular expression: /, "")));
+            return;
+          }
+          const allMatches = [];
+          for (const match of text.matchAll(regex)) {
+            allMatches.push(match);
+            if (allMatches.length >= MAX_MATCHES || !flags.includes("g")) {
+              break;
+            }
+          }
+          // Texto com as ocorrências marcadas
+          let highlighted = "";
+          let position = 0;
+          allMatches.forEach((match) => {
+            highlighted += escapeHtml(text.slice(position, match.index));
+            highlighted += match[0] === "" ? '<mark class="regex-empty"></mark>' : `<mark>${escapeHtml(match[0])}</mark>`;
+            position = match.index + match[0].length;
+          });
+          highlighted += escapeHtml(text.slice(position));
+
+          const groupCount = Math.max(0, ...allMatches.map((match) => match.length - 1));
+          const groupNames = Object.keys(allMatches[0]?.groups ?? {});
+          const rows = allMatches.slice(0, 100).map((match, index) => {
+            const groups = Array.from({ length: groupCount }, (_, groupIndex) => `<td>${match[groupIndex + 1] === undefined ? "—" : escapeHtml(match[groupIndex + 1])}</td>`).join("");
+            return `<tr><td>${index + 1}</td><td><code>${escapeHtml(match[0]) || "(vazio)"}</code></td><td>${match.index}</td>${groups}</tr>`;
+          }).join("");
+          const groupHeaders = Array.from({ length: groupCount }, (_, groupIndex) => `<th>Grupo ${groupIndex + 1}${groupNames[groupIndex] ? ` (${escapeHtml(groupNames[groupIndex])})` : ""}</th>`).join("");
+          const table = allMatches.length ? `<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>Ocorrência</th><th>Posição</th>${groupHeaders}</tr></thead><tbody>${rows}</tbody></table></div>` : "";
+          let replaced = "";
+          if (replacement !== "") {
+            replaced = `<span class="display-label">Texto depois da substituição</span><pre class="display-text jwt-json" id="regex-replaced">${escapeHtml(text.replace(new RegExp(pattern, flags), replacement))}</pre><button class="copy-button" type="button" data-copy-target="regex-replaced">copiar</button>`;
+          }
+          const count = allMatches.length;
+          resultBox.innerHTML = `<div class="display"><span class="display-label">Ocorrências · /${escapeHtml(pattern)}/${flags}</span>
+            <span class="display-value">${count === MAX_MATCHES ? `${formatNumber(count)}+` : formatNumber(count)}</span>
+            <span class="display-detail">${count === 0 ? "Nenhuma parte do texto combina com a expressão." : count === 1 ? "1 ocorrência encontrada" : `${formatNumber(count)} ocorrências encontradas`}${allMatches.length > 100 ? " (a tabela mostra as 100 primeiras)" : ""}</span>
+            <pre class="display-text jwt-json regex-highlight">${highlighted}</pre>${table}${replaced}</div>`;
+        }
+        onInputs(["regex-pattern", "regex-text", "regex-replace", "regex-flag-g", "regex-flag-i", "regex-flag-m", "regex-flag-s", "regex-flag-u"], calculate);
+      },
+    },
+
+    "cores": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="color-input">Cor (HEX, RGB, HSL ou nome em inglês)</label><input id="color-input" class="mono-input" spellcheck="false" autocomplete="off" value="#0e6b4f"></div>
+            <div class="field color-picker-field"><label for="color-picker">Escolher</label><input id="color-picker" type="color" value="#0e6b4f"></div>
+          </div>
+          <p class="field-hint">Exemplos: <code>#ff8800</code>, <code>rgb(14, 107, 79)</code>, <code>hsl(162, 77%, 24%)</code>, <code>tomato</code>.</p>
+        </div>
+        <div id="color-result"></div>`,
+      setup() {
+        const colorInput = document.getElementById("color-input");
+        const colorPicker = document.getElementById("color-picker");
+        // O próprio navegador entende o texto da cor (HEX, rgb(), hsl(), nomes): o canvas devolve em #rrggbb
+        const canvasContext = document.createElement("canvas").getContext("2d");
+        function parseColor(text) {
+          const value = text.trim();
+          if (value === "") {
+            return null;
+          }
+          // HEX sem # ("0e6b4f") também vale
+          const candidate = /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value) ? `#${value}` : value;
+          canvasContext.fillStyle = "#010203";
+          canvasContext.fillStyle = candidate;
+          const first = canvasContext.fillStyle;
+          canvasContext.fillStyle = "#040506";
+          canvasContext.fillStyle = candidate;
+          if (first !== canvasContext.fillStyle) {
+            return null; // o navegador recusou a cor (ficou o valor anterior)
+          }
+          const hexMatch = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(first);
+          if (hexMatch) {
+            return { red: parseInt(hexMatch[1], 16), green: parseInt(hexMatch[2], 16), blue: parseInt(hexMatch[3], 16), alpha: 1 };
+          }
+          const rgbaMatch = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(first);
+          return rgbaMatch ? { red: Math.round(rgbaMatch[1]), green: Math.round(rgbaMatch[2]), blue: Math.round(rgbaMatch[3]), alpha: rgbaMatch[4] === undefined ? 1 : Number(rgbaMatch[4]) } : null;
+        }
+        const toHex = ({ red, green, blue }) => `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+        function rgbToHsl({ red, green, blue }) {
+          const [r, g, b] = [red / 255, green / 255, blue / 255];
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const lightness = (max + min) / 2;
+          if (max === min) {
+            return { hue: 0, saturation: 0, lightness: lightness * 100 };
+          }
+          const delta = max - min;
+          const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+          const hue = max === r ? ((g - b) / delta + (g < b ? 6 : 0)) : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+          return { hue: hue * 60, saturation: saturation * 100, lightness: lightness * 100 };
+        }
+        function hslToRgb({ hue, saturation, lightness }) {
+          const s = saturation / 100;
+          const l = lightness / 100;
+          const chroma = (1 - Math.abs(2 * l - 1)) * s;
+          const huePart = (((hue % 360) + 360) % 360) / 60;
+          const second = chroma * (1 - Math.abs((huePart % 2) - 1));
+          const [r, g, b] = huePart < 1 ? [chroma, second, 0] : huePart < 2 ? [second, chroma, 0] : huePart < 3 ? [0, chroma, second] : huePart < 4 ? [0, second, chroma] : huePart < 5 ? [second, 0, chroma] : [chroma, 0, second];
+          const match = l - chroma / 2;
+          return { red: Math.round((r + match) * 255), green: Math.round((g + match) * 255), blue: Math.round((b + match) * 255) };
+        }
+        function rgbToHsv({ red, green, blue }) {
+          const max = Math.max(red, green, blue) / 255;
+          const min = Math.min(red, green, blue) / 255;
+          return { hue: rgbToHsl({ red, green, blue }).hue, saturation: max === 0 ? 0 : ((max - min) / max) * 100, value: max * 100 };
+        }
+        function rgbToCmyk({ red, green, blue }) {
+          const black = 1 - Math.max(red, green, blue) / 255;
+          if (black === 1) {
+            return { cyan: 0, magenta: 0, yellow: 0, black: 100 };
+          }
+          const part = (channel) => ((1 - channel / 255 - black) / (1 - black)) * 100;
+          return { cyan: part(red), magenta: part(green), yellow: part(blue), black: black * 100 };
+        }
+        // Contraste (WCAG): 4,5 para texto normal (AA), 7 para AAA
+        function luminance({ red, green, blue }) {
+          const linear = (channel) => {
+            const value = channel / 255;
+            return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+          };
+          return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+        }
+        const contrast = (first, second) => {
+          const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+          return (lighter + 0.05) / (darker + 0.05);
+        };
+        const contrastLevel = (ratio) => (ratio >= 7 ? "AAA" : ratio >= 4.5 ? "AA" : ratio >= 3 ? "AA só p/ texto grande" : "reprovado");
+        const round = (value) => Math.round(value);
+        const swatch = (rgb, label = "") => {
+          const hex = toHex(rgb);
+          const textColor = contrast(rgb, { red: 255, green: 255, blue: 255 }) >= contrast(rgb, { red: 0, green: 0, blue: 0 }) ? "#fff" : "#111";
+          return `<button type="button" class="color-swatch" data-color="${hex}" style="background:${hex};color:${textColor}" title="Usar ${hex}">${label ? `<small>${label}</small>` : ""}${hex}</button>`;
+        };
+
+        function calculate() {
+          const resultBox = document.getElementById("color-result");
+          const rgb = parseColor(colorInput.value);
+          if (!rgb) {
+            resultBox.innerHTML = emptyDisplay("Cor", "Cor não reconhecida. Use HEX (#0e6b4f), rgb(), hsl() ou um nome em inglês (red, navy…).");
+            return;
+          }
+          const hex = toHex(rgb);
+          colorPicker.value = hex;
+          const hsl = rgbToHsl(rgb);
+          const hsv = rgbToHsv(rgb);
+          const cmyk = rgbToCmyk(rgb);
+          const formats = [
+            ["HEX", hex.toUpperCase()],
+            ["RGB", `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`],
+            ["HSL", `hsl(${round(hsl.hue)}, ${round(hsl.saturation)}%, ${round(hsl.lightness)}%)`],
+            ["HSV / HSB", `hsv(${round(hsv.hue)}, ${round(hsv.saturation)}%, ${round(hsv.value)}%)`],
+            ["CMYK", `cmyk(${round(cmyk.cyan)}%, ${round(cmyk.magenta)}%, ${round(cmyk.yellow)}%, ${round(cmyk.black)}%)`],
+            ["RGB em 0–1", `${(rgb.red / 255).toFixed(3)}, ${(rgb.green / 255).toFixed(3)}, ${(rgb.blue / 255).toFixed(3)}`],
+            ["Variável CSS", `--cor-principal: ${hex};`],
+          ];
+          if (rgb.alpha < 1) {
+            formats.splice(2, 0, ["RGBA", `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${rgb.alpha})`]);
+          }
+          const formatRows = formats.map(([name, value], index) => `<div class="color-format"><span>${name}</span><code id="color-format-${index}">${escapeHtml(value)}</code><button type="button" class="copy-button" data-copy-target="color-format-${index}">copiar</button></div>`).join("");
+          const white = { red: 255, green: 255, blue: 255 };
+          const black = { red: 0, green: 0, blue: 0 };
+          const onWhite = contrast(rgb, white);
+          const onBlack = contrast(rgb, black);
+          // Tons: mesma cor do mais claro ao mais escuro; harmonias: girando o matiz no círculo de cores
+          const shades = [95, 85, 75, 65, 55, 45, 35, 25, 15].map((lightness) => swatch(hslToRgb({ ...hsl, lightness })));
+          const rotate = (degrees) => hslToRgb({ ...hsl, hue: hsl.hue + degrees });
+          resultBox.innerHTML = `<div class="display"><span class="display-label">Cor</span>
+            <div class="color-preview" style="background:${hex}"></div>
+            <div class="color-formats">${formatRows}</div>
+            <span class="display-label">Contraste (acessibilidade · WCAG)</span>
+            <div class="color-contrast">
+              <div style="background:${hex};color:#fff">Texto branco · ${formatNumber(onWhite, 2)}:1 · ${contrastLevel(onWhite)}</div>
+              <div style="background:${hex};color:#000">Texto preto · ${formatNumber(onBlack, 2)}:1 · ${contrastLevel(onBlack)}</div>
+            </div>
+            <span class="display-label">Tons (do claro ao escuro) · toque para usar</span>
+            <div class="color-swatches">${shades.join("")}</div>
+            <span class="display-label">Combinações</span>
+            <div class="color-swatches">${swatch(rotate(180), "complementar")}${swatch(rotate(-30), "análoga")}${swatch(rotate(30), "análoga")}${swatch(rotate(120), "tríade")}${swatch(rotate(240), "tríade")}</div>
+          </div>`;
+        }
+        colorPicker.addEventListener("input", () => {
+          colorInput.value = colorPicker.value;
+          calculate();
+        });
+        document.getElementById("color-result").addEventListener("click", (clickEvent) => {
+          const swatchButton = clickEvent.target.closest(".color-swatch");
+          if (swatchButton) {
+            colorInput.value = swatchButton.dataset.color;
+            calculate();
+            colorInput.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        });
+        onInputs(["color-input"], calculate);
+      },
+    },
+
+    "tamanho-dados": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="data-size-value">Valor</label><input id="data-size-value" inputmode="decimal" value="500"></div>
+            <div class="field"><label for="data-size-unit">Unidade</label><select id="data-size-unit">
+              <option value="bit">bits (b)</option><option value="kbit">Kilobits (Kb)</option><option value="mbit">Megabits (Mb)</option><option value="gbit">Gigabits (Gb)</option><option value="tbit">Terabits (Tb)</option>
+              <option value="byte">Bytes (B)</option><option value="kb">Kilobytes (KB)</option><option value="mb" selected>Megabytes (MB)</option><option value="gb">Gigabytes (GB)</option><option value="tb">Terabytes (TB)</option><option value="pb">Petabytes (PB)</option>
+              <option value="kib">Kibibytes (KiB)</option><option value="mib">Mebibytes (MiB)</option><option value="gib">Gibibytes (GiB)</option><option value="tib">Tebibytes (TiB)</option>
+            </select></div>
+            <div class="field"><label for="data-size-base">KB, MB, GB valem</label><select id="data-size-base"><option value="1000">1.000 (decimal, padrão SI)</option><option value="1024">1.024 (como o Windows mostra)</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="data-size-speed">Velocidade da internet (Mbps, opcional)</label><input id="data-size-speed" inputmode="decimal" value="100"></div>
+          </div>
+        </div>
+        <div id="data-size-result"></div>`,
+      setup() {
+        // Tudo é convertido para bits. Unidades decimais (SI) usam 1.000; KiB, MiB… sempre 1.024
+        const BIT_UNITS = { bit: 0, kbit: 1, mbit: 2, gbit: 3, tbit: 4 };
+        const BYTE_UNITS = { byte: 0, kb: 1, mb: 2, gb: 3, tb: 4, pb: 5 };
+        const BINARY_UNITS = { kib: 1, mib: 2, gib: 3, tib: 4 };
+        function toBits(value, unit, base) {
+          if (unit in BIT_UNITS) {
+            return value * Math.pow(base, BIT_UNITS[unit]);
+          }
+          if (unit in BYTE_UNITS) {
+            return value * 8 * Math.pow(base, BYTE_UNITS[unit]);
+          }
+          return value * 8 * Math.pow(1024, BINARY_UNITS[unit]);
+        }
+        // Até 6 casas significativas, sem notação científica para números comuns
+        function formatAmount(value) {
+          if (value === 0) {
+            return "0";
+          }
+          if (Math.abs(value) >= 1e15 || Math.abs(value) < 1e-6) {
+            return value.toExponential(4).replace(".", ",");
+          }
+          return new Intl.NumberFormat("pt-BR", { maximumSignificantDigits: Math.abs(value) >= 1e6 ? 16 : 6 }).format(value);
+        }
+        function formatDuration(totalSeconds) {
+          if (totalSeconds < 1) {
+            return "menos de 1 segundo";
+          }
+          const days = Math.floor(totalSeconds / 86400);
+          const hours = Math.floor((totalSeconds % 86400) / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = Math.round(totalSeconds % 60);
+          return [days && `${days} d`, hours && `${hours} h`, minutes && `${minutes} min`, !days && seconds && `${seconds} s`].filter(Boolean).join(" ");
+        }
+
+        function calculate() {
+          const value = parseNumber(document.getElementById("data-size-value").value);
+          const unit = document.getElementById("data-size-unit").value;
+          const base = Number(document.getElementById("data-size-base").value);
+          const speed = parseNumber(document.getElementById("data-size-speed").value);
+          const resultBox = document.getElementById("data-size-result");
+          if (Number.isNaN(value) || value < 0) {
+            resultBox.innerHTML = emptyDisplay("Tamanho", "Digite um valor.");
+            return;
+          }
+          const bits = toBits(value, unit, base);
+          const bytes = bits / 8;
+          const unitLabel = document.getElementById("data-size-unit").selectedOptions[0].textContent.match(/\((.+)\)/)[1];
+          const row = (label, amount) => `<tr><td>${label}</td><td><b>${formatAmount(amount)}</b></td></tr>`;
+          const decimalRows = [["Bits (b)", bits], ["Kilobits (Kb)", bits / base], ["Megabits (Mb)", bits / base ** 2], ["Gigabits (Gb)", bits / base ** 3], ["Terabits (Tb)", bits / base ** 4],
+            ["Bytes (B)", bytes], ["Kilobytes (KB)", bytes / base], ["Megabytes (MB)", bytes / base ** 2], ["Gigabytes (GB)", bytes / base ** 3], ["Terabytes (TB)", bytes / base ** 4], ["Petabytes (PB)", bytes / base ** 5]];
+          const binaryRows = [["Kibibytes (KiB)", bytes / 1024], ["Mebibytes (MiB)", bytes / 1024 ** 2], ["Gibibytes (GiB)", bytes / 1024 ** 3], ["Tebibytes (TiB)", bytes / 1024 ** 4]];
+          // Velocidade de internet é em megabits por segundo (sempre 1.000.000 bits)
+          const downloadTime = speed > 0 ? formatDuration(bits / (speed * 1e6)) : null;
+          resultBox.innerHTML = display(
+            `${formatAmount(value)} ${unitLabel} =`,
+            `${formatAmount(bytes / base ** 2)} MB`,
+            `${formatAmount(bytes / base ** 3)} GB · ${formatAmount(bytes)} bytes · ${formatAmount(bits / base ** 2)} Mb (megabits)`,
+            downloadTime ? [[`Download a ${formatNumber(speed, 1)} Mbps`, downloadTime]] : [],
+            `<div class="table-scroll"><table class="data-table"><thead><tr><th>Unidade (base ${formatNumber(base)})</th><th>Valor</th></tr></thead><tbody>${decimalRows.map(([label, amount]) => row(label, amount)).join("")}</tbody></table></div>
+             <div class="table-scroll"><table class="data-table"><thead><tr><th>Binárias (sempre 1.024)</th><th>Valor</th></tr></thead><tbody>${binaryRows.map(([label, amount]) => row(label, amount)).join("")}</tbody></table></div>`,
+          );
+        }
+        onInputs(["data-size-value", "data-size-unit", "data-size-base", "data-size-speed"], calculate);
+      },
+    },
+
+    "http-status": {
+      html: `        <div class="calculator-body">
+          <div class="field"><label for="http-search">Procure pelo código ou por uma palavra</label><input id="http-search" class="mono-input" autocomplete="off" spellcheck="false" placeholder="ex.: 404, redirect, timeout, cloudflare"></div>
+          <div class="segmented http-families" id="http-family" role="group" aria-label="Família">
+            <button type="button" data-value="all" aria-pressed="true">Todos</button>
+            <button type="button" data-value="1" aria-pressed="false">1xx</button>
+            <button type="button" data-value="2" aria-pressed="false">2xx</button>
+            <button type="button" data-value="3" aria-pressed="false">3xx</button>
+            <button type="button" data-value="4" aria-pressed="false">4xx</button>
+            <button type="button" data-value="5" aria-pressed="false">5xx</button>
+          </div>
+        </div>
+        <div id="http-result"></div>`,
+      setup() {
+        const FAMILIES = {
+          1: ["Informação", "O servidor recebeu o pedido e o processo continua."],
+          2: ["Sucesso", "Deu certo."],
+          3: ["Redirecionamento", "O conteúdo está em outro lugar; o navegador segue para lá."],
+          4: ["Erro do cliente", "O problema está no pedido (endereço, dados, login ou permissão)."],
+          5: ["Erro do servidor", "O pedido parecia certo, mas o servidor falhou ao responder."],
+        };
+        // [código, nome, o que significa, o que verificar]
+        const CODES = [
+          [100, "Continue", "O servidor recebeu o cabeçalho e o cliente pode mandar o corpo do pedido.", "Normal em uploads grandes com o cabeçalho Expect: 100-continue."],
+          [101, "Switching Protocols", "O servidor aceitou trocar de protocolo, como de HTTP para WebSocket.", "Esperado ao abrir um WebSocket."],
+          [103, "Early Hints", "Dicas antecipadas para o navegador já carregar CSS e scripts.", "Otimização de desempenho; não exige ação."],
+          [200, "OK", "Deu certo. A resposta traz o conteúdo pedido.", "Se a tela está errada mesmo com 200, o problema está no conteúdo devolvido (veja o corpo da resposta)."],
+          [201, "Created", "O recurso foi criado (ex.: cadastro salvo).", "O cabeçalho Location costuma trazer o endereço do item novo."],
+          [202, "Accepted", "O pedido foi aceito, mas ainda vai ser processado (fila).", "Consulte o status depois; o resultado não vem agora."],
+          [204, "No Content", "Deu certo e não há conteúdo para devolver.", "Comum em DELETE e PUT. Não tente ler JSON da resposta: o corpo é vazio."],
+          [206, "Partial Content", "Só um pedaço do arquivo foi enviado (Range).", "Normal em vídeos e downloads que podem ser retomados."],
+          [301, "Moved Permanently", "O endereço mudou de vez. Navegadores e o Google passam a usar o novo.", "Use para trocar de domínio ou de URL; o Google transfere a relevância. Fica guardado no navegador: cuidado ao testar."],
+          [302, "Found", "Redirecionamento temporário: o endereço original continua valendo.", "Comum depois de login ou de enviar formulário. Para mudança definitiva, use 301."],
+          [303, "See Other", "Depois de um POST, busque o resultado em outro endereço com GET.", "Padrão para evitar reenvio do formulário ao atualizar a página."],
+          [304, "Not Modified", "O conteúdo não mudou; o navegador usa a cópia em cache.", "Bom sinal de cache funcionando (ETag / Last-Modified)."],
+          [307, "Temporary Redirect", "Como o 302, mas mantém o método (um POST continua POST).", "Use em APIs quando o método não pode virar GET."],
+          [308, "Permanent Redirect", "Como o 301, mas mantém o método.", "Redirecionamento definitivo em APIs."],
+          [400, "Bad Request", "O pedido está malformado: JSON inválido, campo faltando ou formato errado.", "Confira o corpo enviado, o Content-Type e os parâmetros. A resposta costuma dizer qual campo está errado."],
+          [401, "Unauthorized", "Falta login ou o token é inválido ou expirou.", "Veja o cabeçalho Authorization, a validade do token e se o cookie de sessão foi enviado."],
+          [402, "Payment Required", "Reservado para pagamento; algumas APIs usam quando o plano acabou.", "Confira a assinatura ou os créditos do serviço."],
+          [403, "Forbidden", "O servidor entendeu quem você é, mas não deixa acessar.", "Permissão do usuário, regra de firewall/WAF, bloqueio por IP ou país, ou permissões de arquivo no servidor."],
+          [404, "Not Found", "O endereço não existe no servidor.", "Erro de digitação na URL, rota não criada, arquivo apagado ou link antigo. Em SPA, falta configurar o fallback para o index.html."],
+          [405, "Method Not Allowed", "O endereço existe, mas não aceita esse método (ex.: POST onde só há GET).", "Confira o método da chamada e as rotas do servidor. O cabeçalho Allow lista os aceitos."],
+          [406, "Not Acceptable", "O servidor não tem o formato pedido no cabeçalho Accept.", "Ajuste o Accept (ex.: application/json)."],
+          [408, "Request Timeout", "O cliente demorou demais para enviar o pedido.", "Conexão lenta ou upload grande; tente de novo."],
+          [409, "Conflict", "O pedido conflita com o estado atual (ex.: cadastro duplicado, versão desatualizada).", "Recarregue os dados e tente de novo; confira campos únicos."],
+          [410, "Gone", "O conteúdo foi removido de propósito e não volta.", "Diferente do 404: avisa o Google para tirar a página do índice mais rápido."],
+          [411, "Length Required", "Falta o cabeçalho Content-Length.", "Envie o tamanho do corpo do pedido."],
+          [413, "Payload Too Large", "O corpo do pedido é maior que o limite do servidor.", "Arquivo grande demais: aumente upload_max_filesize/post_max_size (PHP) ou client_max_body_size (Nginx)."],
+          [414, "URI Too Long", "O endereço é longo demais.", "Mande os dados no corpo (POST) em vez de na URL."],
+          [415, "Unsupported Media Type", "O formato do corpo não é aceito.", "Confira o Content-Type (ex.: application/json) e se o corpo bate com ele."],
+          [418, "I'm a teapot", "Piada de 1º de abril (RFC 2324): \"sou um bule de chá\".", "Alguns servidores usam para recusar robôs."],
+          [422, "Unprocessable Content", "O formato está certo, mas os dados não passam na validação.", "Leia a mensagem de erro: ela indica quais campos estão inválidos."],
+          [425, "Too Early", "O servidor não quer processar um pedido que pode ser repetido.", "Raro; ligado ao TLS 1.3 com dados antecipados."],
+          [428, "Precondition Required", "O servidor exige um cabeçalho de condição (ex.: If-Match).", "Envie a versão (ETag) do recurso que você está alterando."],
+          [429, "Too Many Requests", "Pedidos demais em pouco tempo (limite de uso).", "Espere o tempo do cabeçalho Retry-After, diminua a frequência e use cache."],
+          [431, "Request Header Fields Too Large", "Cabeçalhos grandes demais.", "Normalmente cookies acumulados: apague os cookies do site."],
+          [451, "Unavailable For Legal Reasons", "Bloqueado por motivo legal (ordem judicial, censura).", "Não há ação técnica."],
+          [500, "Internal Server Error", "Erro genérico: o código do servidor quebrou.", "Olhe o log de erros do servidor (PHP error_log, logs da aplicação). Causas comuns: exceção não tratada, erro de sintaxe, .htaccess inválido."],
+          [501, "Not Implemented", "O servidor não suporta a função pedida.", "Método HTTP não reconhecido pelo servidor."],
+          [502, "Bad Gateway", "O servidor intermediário (proxy, CDN) recebeu uma resposta inválida do servidor de origem.", "A aplicação caiu ou travou (PHP-FPM, Node), ou fechou a conexão. Veja se o serviço de origem está rodando e o log dele."],
+          [503, "Service Unavailable", "Servidor indisponível: sobrecarga ou manutenção.", "Temporário: confira o uso de CPU/memória, limites da hospedagem e se há manutenção. Pode vir com Retry-After."],
+          [504, "Gateway Timeout", "O intermediário cansou de esperar a resposta da origem.", "A página demora demais: consultas lentas no banco, API externa travada ou limite de tempo do proxy baixo."],
+          [505, "HTTP Version Not Supported", "O servidor não suporta a versão do HTTP usada.", "Raro; confira a configuração do cliente."],
+          [507, "Insufficient Storage", "O servidor ficou sem espaço para concluir.", "Disco cheio: libere espaço."],
+          [508, "Loop Detected", "O servidor encontrou um laço infinito ao processar.", "Também usado por hospedagens quando o site passa do limite de recursos."],
+          [520, "Web Server Returned an Unknown Error (Cloudflare)", "A origem devolveu algo vazio ou inesperado ao Cloudflare.", "O servidor fechou a conexão ou mandou resposta inválida: veja os logs da origem e cabeçalhos grandes demais."],
+          [521, "Web Server Is Down (Cloudflare)", "O servidor de origem recusou a conexão do Cloudflare.", "Servidor desligado ou firewall bloqueando os IPs do Cloudflare."],
+          [522, "Connection Timed Out (Cloudflare)", "O Cloudflare não conseguiu conectar na origem a tempo.", "Servidor sobrecarregado, firewall ou IP errado no DNS."],
+          [523, "Origin Is Unreachable (Cloudflare)", "O Cloudflare não acha o caminho até a origem.", "Confira o IP do registro DNS no Cloudflare."],
+          [524, "A Timeout Occurred (Cloudflare)", "A origem conectou, mas demorou mais de 100 segundos para responder.", "Processo lento demais: rode em segundo plano ou otimize a consulta."],
+          [525, "SSL Handshake Failed (Cloudflare)", "Falhou a conexão segura entre o Cloudflare e a origem.", "Certificado SSL do servidor ausente ou mal configurado (modo Full)."],
+          [526, "Invalid SSL Certificate (Cloudflare)", "O certificado da origem é inválido (modo Full strict).", "Renove o certificado ou use um certificado de origem do Cloudflare."],
+        ];
+        let family = "all";
+        const searchInput = document.getElementById("http-search");
+
+        function calculate() {
+          const words = normalizeText(searchInput.value).split(/\s+/).filter(Boolean);
+          const resultBox = document.getElementById("http-result");
+          // Código exato (ex.: "404"): mostra só ele, mesmo que outros textos citem o número
+          const exactMatch = CODES.filter(([code]) => String(code) === searchInput.value.trim());
+          const matches = exactMatch.length ? exactMatch : CODES.filter(([code, name, meaning, tip]) => {
+            if (family !== "all" && String(code)[0] !== family) {
+              return false;
+            }
+            const haystack = normalizeText(`${code} ${name} ${meaning} ${tip} ${FAMILIES[String(code)[0]][0]}`);
+            return words.every((word) => haystack.includes(word));
+          });
+          if (matches.length === 0) {
+            resultBox.innerHTML = emptyDisplay("Códigos HTTP", "Nenhum código encontrado com essa busca.");
+            return;
+          }
+          // Busca por um código exato: já abre a explicação dele
+          const exactCode = /^\d{3}$/.test(searchInput.value.trim());
+          resultBox.innerHTML = `<div class="http-list">${matches.map(([code, name, meaning, tip]) => {
+            const familyDigit = String(code)[0];
+            return `<details class="http-code http-${familyDigit}xx"${exactCode || matches.length === 1 ? " open" : ""}>
+              <summary><b>${code}</b><span>${escapeHtml(name)}</span><small>${FAMILIES[familyDigit][0]}</small></summary>
+              <p>${escapeHtml(meaning)}</p>
+              <p class="http-tip"><b>O que verificar:</b> ${escapeHtml(tip)}</p>
+            </details>`;
+          }).join("")}</div>`;
+        }
+        setupSegmented("http-family", (value) => {
+          family = value;
+          calculate();
+        });
+        onInputs(["http-search"], calculate);
+      },
+    },
+
     "json-formatter": {
       html: `        <div class="calculator-body">
           <div class="field"><label for="json-input">JSON</label><textarea id="json-input" spellcheck="false" rows="10" class="mono-input">{"usuario":{"id":42,"nome":"Ana","ativo":true,"tags":["admin","dev"]},"pedidos":[{"id":1,"total":99.9},{"id":2,"total":150}]}</textarea></div>

@@ -114,3 +114,6 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 ## Banner de compartilhamento (og:image)
 - `php bin/og-images.php` gera PNGs 1200×630 em `public/assets/img/og/` (um por calculadora + `vibe2000.png` geral + `feriados.png`), com GD e a fonte IBM Plex Sans (OFL) de `bin/fonts/`. Os PNGs vão no commit; o servidor não desenha nada.
 - `share_banner($nome)` (helpers.php) devolve o endereço com `?v=` da data do arquivo. Notícias usam a própria foto.
+
+## Ferramentas de TI (categoria "dev", nome no menu: TI)
+- Tudo roda no navegador (nada vai para o servidor): `json-csv` (Excel BR = `;` + vírgula decimal + BOM), `regex` (padrões prontos em `PRESETS`), `cores` (o canvas do navegador interpreta a cor), `tamanho-dados` (bases 1.000 e 1.024 + tempo de download), `http-status` (lista `CODES`, inclui 520–526 do Cloudflare).

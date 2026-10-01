@@ -1112,6 +1112,148 @@ HTML,
 </div>
 HTML,
         ],
+        'json-csv' => [
+            'name' => 'Conversor JSON ↔ CSV',
+            'seo_title' => 'Converter JSON para CSV (e CSV para JSON) Online',
+            'symbol' => 'CSV',
+            'category' => 'dev',
+            'description' => 'Converte JSON em CSV para o Excel e CSV em JSON.',
+            'keywords' => 'converter json para csv json to csv csv para json csv to json excel planilha exportar json online',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Cole um JSON ou abra um arquivo e baixe o CSV pronto para o Excel em português, ou faça o caminho de volta, de CSV para JSON.',
+            'explainer' => <<<'HTML'
+<h2>JSON para CSV</h2>
+<p>Cada objeto da lista vira uma linha e cada chave vira uma coluna. Objetos dentro de objetos podem virar colunas próprias (<code>endereco.uf</code>, <code>endereco.cep</code>); listas ficam como texto JSON dentro da célula.</p>
+<p>Se o JSON for um objeto com uma lista dentro (como <code>{"itens": [...]}</code>), a lista é usada.</p>
+<h2>Excel em português</h2>
+<p>O Excel brasileiro espera o <b>ponto e vírgula</b> como separador e a <b>vírgula nos decimais</b>. A opção "Excel em português" já faz as duas coisas e salva o arquivo com a marcação UTF-8 (BOM), para os acentos aparecerem certos.</p>
+<h2>CSV para JSON</h2>
+<p>A primeira linha vira o nome das chaves. O separador (ponto e vírgula, vírgula ou tab) é detectado sozinho. Números e true/false viram valores de verdade; códigos com zero à esquerda, como CEP, continuam texto.</p>
+<p class="notice">A conversão é feita no seu navegador: o arquivo não é enviado para nenhum servidor.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Por que o CSV abriu todo em uma coluna só no Excel?</summary><p>O separador não bateu com o do Excel. No Excel em português, use a opção de ponto e vírgula. Se for abrir no Google Planilhas ou em sistemas fora do Brasil, use a vírgula.</p></details>
+  <details><summary>Qual o tamanho máximo do arquivo?</summary><p>Até 50 MB. Como tudo roda no navegador, arquivos muito grandes podem deixar a página lenta por alguns segundos.</p></details>
+  <details><summary>E se os objetos tiverem chaves diferentes?</summary><p>O CSV junta todas as chaves encontradas como colunas; quando um objeto não tem a chave, a célula fica vazia.</p></details>
+</div>
+HTML,
+        ],
+        'regex' => [
+            'name' => 'Testador de regex',
+            'seo_title' => 'Testador de Regex Online com Padrões Prontos (CPF, E-mail, CEP)',
+            'symbol' => '.*',
+            'category' => 'dev',
+            'description' => 'Testa expressões regulares e tem padrões prontos para CPF, e-mail, CEP e mais.',
+            'keywords' => 'regex testar expressão regular online regex tester javascript padrão cpf cnpj email cep telefone gerador de regex',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Teste expressões regulares com o texto destacado, veja grupos e substituições, ou comece por um padrão pronto para CPF, CNPJ, e-mail, CEP e telefone.',
+            'explainer' => <<<'HTML'
+<h2>Guia rápido de regex</h2>
+<table class="data-table">
+  <thead><tr><th>Símbolo</th><th>Significa</th></tr></thead>
+  <tbody>
+    <tr><td><code>.</code></td><td>qualquer caractere (menos quebra de linha, sem a flag s)</td></tr>
+    <tr><td><code>\d</code> <code>\w</code> <code>\s</code></td><td>dígito · letra, número ou _ · espaço (maiúsculas negam: <code>\D</code>)</td></tr>
+    <tr><td><code>[abc]</code> <code>[^abc]</code> <code>[a-z]</code></td><td>um destes · nenhum destes · intervalo</td></tr>
+    <tr><td><code>*</code> <code>+</code> <code>?</code></td><td>0 ou mais · 1 ou mais · opcional</td></tr>
+    <tr><td><code>{3}</code> <code>{2,5}</code></td><td>exatamente 3 · de 2 a 5 vezes</td></tr>
+    <tr><td><code>^</code> <code>$</code> <code>\b</code></td><td>início · fim · limite de palavra</td></tr>
+    <tr><td><code>( )</code> <code>(?&lt;nome&gt; )</code> <code>(?: )</code></td><td>grupo · grupo com nome · grupo sem captura</td></tr>
+    <tr><td><code>a|b</code></td><td>a ou b</td></tr>
+    <tr><td><code>(?=x)</code> <code>(?!x)</code></td><td>seguido de x · não seguido de x</td></tr>
+  </tbody>
+</table>
+<p>Na substituição, <code>$1</code>, <code>$2</code> trazem o conteúdo dos grupos e <code>$&amp;</code> traz a ocorrência inteira.</p>
+<p class="notice">Usa o motor de regex do JavaScript (o mesmo do navegador e do Node.js). Os padrões prontos conferem o formato, não se o CPF, CNPJ ou e-mail existem de verdade. Para validar o dígito do CPF/CNPJ, use o <a href="/calculadoras/cpf-cnpj">validador de CPF e CNPJ</a>.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>O que são as flags g, i, m, s e u?</summary><p>g procura todas as ocorrências (sem ela, só a primeira); i ignora maiúsculas e minúsculas; m faz ^ e $ valerem para cada linha; s faz o ponto pegar também quebras de linha; u ativa o modo unicode.</p></details>
+  <details><summary>A regex daqui funciona em PHP, Python ou Java?</summary><p>Na maior parte, sim: os símbolos básicos são iguais. Recursos avançados (como grupos com nome e lookbehind) mudam um pouco entre linguagens; teste no ambiente final.</p></details>
+  <details><summary>Por que a página travou com uma regex?</summary><p>Alguns padrões com repetições aninhadas, como <code>(a+)+</code>, ficam extremamente lentos em certos textos (backtracking catastrófico). Simplifique a expressão.</p></details>
+</div>
+HTML,
+        ],
+        'cores' => [
+            'name' => 'Conversor de cores',
+            'seo_title' => 'Conversor de Cores HEX, RGB, HSL e CMYK com Paleta',
+            'symbol' => '🎨',
+            'category' => 'dev',
+            'description' => 'Converte HEX, RGB, HSL, HSV e CMYK, mostra contraste e paleta.',
+            'keywords' => 'conversor de cores hex para rgb rgb para hex hsl cmyk paleta de cores tons contraste wcag cor complementar color picker',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Converta uma cor entre HEX, RGB, HSL, HSV e CMYK, confira o contraste para acessibilidade e gere tons e combinações.',
+            'explainer' => <<<'HTML'
+<h2>Formatos de cor</h2>
+<ul>
+  <li><b>HEX</b> (<code>#0e6b4f</code>): vermelho, verde e azul em hexadecimal, de 00 a FF. É o mais usado em CSS e design.</li>
+  <li><b>RGB</b> (<code>rgb(14, 107, 79)</code>): os mesmos canais de 0 a 255.</li>
+  <li><b>HSL</b>: matiz (0 a 360°), saturação e luminosidade. Facilita criar tons mais claros ou escuros da mesma cor.</li>
+  <li><b>HSV/HSB</b>: parecido com o HSL; é o usado nos seletores de cor do Photoshop e do Figma.</li>
+  <li><b>CMYK</b>: ciano, magenta, amarelo e preto, para impressão. A conversão é aproximada: a cor impressa depende do perfil de cor da gráfica.</li>
+</ul>
+<h2>Contraste e acessibilidade</h2>
+<p>A norma WCAG pede contraste de pelo menos <b>4,5:1</b> para texto normal (nível AA) e <b>7:1</b> para o nível AAA. Texto grande (a partir de 24 px, ou 19 px em negrito) pode ter 3:1.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Como converter HEX para RGB?</summary><p>Separe o código em três pares e converta cada um de hexadecimal para decimal: #0e6b4f vira 0e = 14, 6b = 107, 4f = 79, ou seja, rgb(14, 107, 79).</p></details>
+  <details><summary>O que é cor complementar?</summary><p>É a cor do lado oposto no círculo de cores (180° de diferença no matiz). Combinações complementares dão bastante contraste; análogas (vizinhas, ±30°) ficam mais harmônicas.</p></details>
+</div>
+HTML,
+        ],
+        'tamanho-dados' => [
+            'name' => 'Conversor de bytes, KB, MB, GB e TB',
+            'seo_title' => 'Conversor de MB para GB, KB, TB e Bits (e Tempo de Download)',
+            'symbol' => 'GB',
+            'category' => 'dev',
+            'description' => 'Converte bytes, KB, MB, GB, TB e bits, e calcula o tempo de download.',
+            'keywords' => 'converter mb para gb gb para mb kb mb gb tb bytes bits megabits megabytes quantos mb tem um gb tempo de download mbps kib mib gib',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Digite um tamanho e veja o equivalente em bits, bytes, KB, MB, GB e TB, nas bases 1.000 e 1.024, e quanto tempo leva para baixar.',
+            'explainer' => <<<'HTML'
+<h2>1 GB tem 1.000 ou 1.024 MB?</h2>
+<p>Os dois, dependendo de quem mede. Pelo padrão internacional (SI), <b>1 GB = 1.000 MB</b>: é o usado por fabricantes de HD, SSD e pen drive e pelas operadoras. O Windows calcula com <b>1.024</b>; por isso um HD de 1 TB aparece como cerca de 931 GB. Para evitar confusão, as unidades de base 1.024 têm nomes próprios: KiB, MiB, GiB e TiB.</p>
+<h2>Bit não é byte</h2>
+<p>1 byte = 8 bits. A velocidade da internet é medida em <b>megabits</b> por segundo (Mbps), e o tamanho dos arquivos em <b>megabytes</b> (MB). Uma internet de 100 Mbps baixa no máximo 12,5 MB por segundo.</p>
+<p class="notice">O tempo de download é o mínimo teórico; na prática, Wi-Fi, distância do servidor e horário deixam a transferência mais lenta.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Quantos MB tem 1 GB?</summary><p>1.000 MB no padrão decimal (SI) ou 1.024 MiB no binário, que é como o Windows mostra.</p></details>
+  <details><summary>Quanto tempo leva para baixar 1 GB com 100 Mbps?</summary><p>No mínimo 80 segundos: 1 GB = 8.000 megabits, divididos por 100 Mbps.</p></details>
+</div>
+HTML,
+        ],
+        'http-status' => [
+            'name' => 'Códigos de status HTTP',
+            'seo_title' => 'Códigos de Status HTTP: 200, 301, 404, 500, 502 Explicados',
+            'symbol' => '404',
+            'category' => 'dev',
+            'description' => 'Guia rápido dos códigos HTTP, com o que significam e o que verificar.',
+            'keywords' => 'códigos http status code 404 o que é erro 500 502 bad gateway 503 504 gateway timeout 301 302 redirect 403 forbidden 401 cloudflare 520 521 522 524',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Consulte o que cada código de status HTTP significa, em português simples, e o que verificar para resolver o erro.',
+            'explainer' => <<<'HTML'
+<h2>As cinco famílias</h2>
+<ul>
+  <li><b>1xx · informação:</b> o pedido foi recebido e o processo continua.</li>
+  <li><b>2xx · sucesso:</b> deu certo (200 é o mais comum).</li>
+  <li><b>3xx · redirecionamento:</b> o conteúdo está em outro endereço (301 definitivo, 302 temporário).</li>
+  <li><b>4xx · erro do cliente:</b> o problema está no pedido: endereço errado (404), sem login (401), sem permissão (403).</li>
+  <li><b>5xx · erro do servidor:</b> o servidor falhou (500), ou um intermediário não conseguiu falar com ele (502, 504).</li>
+</ul>
+<p>Os códigos 520 a 526 não são oficiais: são do Cloudflare e indicam problemas entre o Cloudflare e o servidor do site.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Qual a diferença entre 301 e 302?</summary><p>O 301 diz que o endereço mudou para sempre: o Google passa a mostrar o novo e transfere a relevância. O 302 é temporário: o endereço original continua sendo o principal.</p></details>
+  <details><summary>Qual a diferença entre 401 e 403?</summary><p>401: o servidor não sabe quem você é (falta login ou o token é inválido). 403: ele sabe quem você é, mas você não tem permissão.</p></details>
+  <details><summary>Qual a diferença entre 502 e 504?</summary><p>No 502 o servidor de origem respondeu algo inválido (ou caiu); no 504 ele demorou demais para responder.</p></details>
+</div>
+HTML,
+        ],
         'json-formatter' => [
             'name' => 'JSON formatter',
             'seo_title' => 'JSON Formatter e Validador Online',
