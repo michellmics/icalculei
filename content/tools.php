@@ -28,7 +28,7 @@ return [
         'datas' => 'Datas e tempo',
         'veiculos' => 'Veículos',
         'texto' => 'Texto',
-        'dev' => 'Área dev',
+        'dev' => 'TI',
     ],
 
     'tools' => [
@@ -733,6 +733,108 @@ HTML,
 <div class="faq">
   <details><summary>Recarregar em eletroposto muda a conta?</summary><p>Muda bastante. Carregadores rápidos em shoppings e estradas costumam cobrar por kWh bem mais que a tarifa residencial. Se vai recarregar fora de casa com frequência, use o preço médio que você paga.</p></details>
   <details><summary>A economia paga o preço mais alto do elétrico?</summary><p>Preencha quanto o elétrico custa a mais na compra: a calculadora mostra em quantos anos a economia de energia cobre essa diferença. Lembre que seguro, IPVA, manutenção e revenda também pesam na decisão.</p></details>
+</div>
+HTML,
+        ],
+        'investimentos' => [
+            'name' => 'CDB, LCI, Tesouro ou poupança',
+            'seo_title' => 'CDB, LCI/LCA, Tesouro Selic ou Poupança: Qual Rende Mais?',
+            'symbol' => '📈',
+            'category' => 'financas',
+            'description' => 'Compara o rendimento líquido de CDB, LCI/LCA, Tesouro Selic e poupança.',
+            'keywords' => 'qual investimento rende mais cdb lci lca tesouro selic poupança rendimento líquido imposto de renda 100% do cdi quanto rende 10 mil simulador de investimentos renda fixa',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Compare quanto seu dinheiro rende, já descontando o imposto de renda, em CDB, LCI/LCA, Tesouro Selic e poupança.',
+            'explainer' => <<<'HTML'
+<h2>Como a comparação é feita</h2>
+<p>Cada depósito (o valor inicial e cada aporte mensal) rende pelo tempo em que ficou aplicado. No fim, a calculadora desconta o imposto de renda de cada um pela tabela regressiva e mostra o valor líquido para resgatar.</p>
+<ul>
+  <li><b>CDB:</b> rende uma porcentagem do CDI e paga imposto de renda.</li>
+  <li><b>LCI e LCA:</b> rendem uma porcentagem do CDI e são isentas de IR para pessoa física. Exigem pelo menos 6 meses de aplicação (as atreladas ao CDI, pela Resolução CMN 5.215/2025).</li>
+  <li><b>Tesouro Selic:</b> rende a Selic (cerca de 0,10 ponto acima do CDI), paga IR e taxa de custódia da B3 de 0,20% ao ano só sobre o que passar de R$ 10 mil.</li>
+  <li><b>Poupança:</b> isenta de IR. Com a Selic acima de 8,5% ao ano, rende 0,5% ao mês mais a TR.</li>
+</ul>
+<h2>Imposto de renda na renda fixa (tabela regressiva)</h2>
+<table class="data-table">
+  <thead><tr><th>Tempo aplicado</th><th>Alíquota sobre o rendimento</th></tr></thead>
+  <tbody>
+    <tr><td>Até 180 dias</td><td>22,5%</td></tr>
+    <tr><td>De 181 a 360 dias</td><td>20%</td></tr>
+    <tr><td>De 361 a 720 dias</td><td>17,5%</td></tr>
+    <tr><td>Acima de 720 dias</td><td>15%</td></tr>
+  </tbody>
+</table>
+<p class="notice">Simulação com as taxas de hoje mantidas durante todo o prazo; na prática o CDI e a poupança mudam. O CDI e a poupança vêm do Banco Central e podem ser alterados. Não considera IOF (só existe em resgates com menos de 30 dias) nem o preço de mercado do Tesouro em vendas antecipadas. Não é recomendação de investimento.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>LCI a 90% do CDI rende mais que CDB a 100%?</summary><p>Muitas vezes sim, porque a LCI não paga imposto de renda. Em 2 anos, um CDB de 100% do CDI paga 15% a 17,5% de IR sobre o rendimento; aí uma LCI acima de uns 83% a 85% do CDI já empata ou ganha. Coloque as taxas na calculadora para ver no seu caso.</p></details>
+  <details><summary>A poupança ainda vale a pena?</summary><p>Ela é isenta de IR e tem liquidez, mas costuma render menos que um CDB de 100% do CDI ou o Tesouro Selic, principalmente com a Selic alta. Para a reserva de emergência, CDB com liquidez diária e Tesouro Selic são as alternativas mais comuns.</p></details>
+  <details><summary>O que é o CDI?</summary><p>É a taxa dos empréstimos entre bancos, que anda colada na Selic. A maioria dos CDBs, LCIs e LCAs paga uma porcentagem dele, como "100% do CDI".</p></details>
+  <details><summary>Esses investimentos têm garantia?</summary><p>CDB, LCI e LCA têm garantia do FGC até R$ 250 mil por CPF e por instituição. A poupança também. O Tesouro Selic é garantido pelo Tesouro Nacional.</p></details>
+</div>
+HTML,
+        ],
+        'fgts' => [
+            'name' => 'FGTS: saldo e multa de 40%',
+            'seo_title' => 'Calculadora do FGTS: Saldo Futuro, Depósitos e Multa de 40%',
+            'symbol' => 'FG',
+            'category' => 'trabalho',
+            'description' => 'Quanto você terá no FGTS e quanto recebe com a multa de 40% na demissão.',
+            'keywords' => 'fgts calcular saldo do fgts quanto vou ter de fgts multa de 40% demissão sem justa causa depósito 8% rendimento fgts saque rescisão',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Calcule quanto vai ter no FGTS daqui a alguns meses e quanto receberia numa demissão sem justa causa, com a multa de 40%.',
+            'explainer' => <<<'HTML'
+<h2>Como o FGTS é calculado</h2>
+<p>Todo mês a empresa deposita <b>8% do salário bruto</b> na sua conta do FGTS (2% para jovem aprendiz). Esse valor não é descontado do seu salário. Também há depósito sobre o 13º e sobre o 1/3 de férias.</p>
+<p>O saldo rende <b>3% ao ano mais a TR</b>, e o FGTS ainda distribui parte do lucro do fundo todo ano. A calculadora usa só os 3% (o mínimo garantido), então o saldo real tende a ser um pouco maior.</p>
+<h2>Multa de 40% na demissão</h2>
+<p>Na demissão sem justa causa, a empresa paga uma multa de 40% sobre todos os depósitos feitos durante aquele emprego, com correção. Na demissão por acordo, a multa é de 20% e o saque é de 80% do saldo.</p>
+<p class="notice">Estimativa. A multa usa o saldo calculado como base (na prática, é a soma dos depósitos do emprego atual corrigidos). Confira o saldo real no app FGTS.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>O FGTS é descontado do salário?</summary><p>Não. Os 8% são pagos pela empresa, além do salário. Por isso o valor não aparece como desconto no holerite, só como informação.</p></details>
+  <details><summary>Quem está no saque-aniversário recebe o FGTS na demissão?</summary><p>Recebe só a multa de 40%. O saldo fica bloqueado e continua disponível apenas no saque-aniversário anual. Para voltar ao saque-rescisão, o pedido só vale depois de 24 meses.</p></details>
+  <details><summary>Quanto o FGTS rende?</summary><p>3% ao ano mais a TR, mais a distribuição anual de lucros do fundo. Pela decisão do STF de 2024, se o total ficar abaixo da inflação (IPCA), a diferença precisa ser compensada.</p></details>
+</div>
+HTML,
+        ],
+        'saque-aniversario-fgts' => [
+            'name' => 'Saque-aniversário do FGTS',
+            'seo_title' => 'Saque-Aniversário FGTS: Calcule Quanto Você Pode Sacar',
+            'symbol' => '🎂',
+            'category' => 'trabalho',
+            'description' => 'Valor do saque-aniversário pela tabela oficial e o prazo para sacar.',
+            'keywords' => 'saque aniversário fgts quanto posso sacar tabela alíquota parcela adicional calcular saque aniversário vale a pena prazo para sacar',
+            'ready' => true,
+            'reviewed' => '2026-10-01',
+            'lead' => 'Descubra quanto você pode sacar por ano no saque-aniversário do FGTS, pela tabela oficial, e até quando pode retirar.',
+            'explainer' => <<<'HTML'
+<h2>Tabela do saque-aniversário</h2>
+<p>O valor é uma porcentagem do saldo total do FGTS (todas as contas somadas) mais uma parcela adicional fixa:</p>
+<table class="data-table">
+  <thead><tr><th>Saldo total</th><th>Alíquota</th><th>Parcela adicional</th></tr></thead>
+  <tbody>
+    <tr><td>Até R$ 500,00</td><td>50%</td><td>—</td></tr>
+    <tr><td>De R$ 500,01 a R$ 1.000,00</td><td>40%</td><td>R$ 50,00</td></tr>
+    <tr><td>De R$ 1.000,01 a R$ 5.000,00</td><td>30%</td><td>R$ 150,00</td></tr>
+    <tr><td>De R$ 5.000,01 a R$ 10.000,00</td><td>20%</td><td>R$ 650,00</td></tr>
+    <tr><td>De R$ 10.000,01 a R$ 15.000,00</td><td>15%</td><td>R$ 1.150,00</td></tr>
+    <tr><td>De R$ 15.000,01 a R$ 20.000,00</td><td>10%</td><td>R$ 1.900,00</td></tr>
+    <tr><td>Acima de R$ 20.000,00</td><td>5%</td><td>R$ 2.900,00</td></tr>
+  </tbody>
+</table>
+<p>O dinheiro fica disponível do primeiro dia útil do mês do aniversário até o último dia útil do segundo mês seguinte.</p>
+<h2>Vale a pena?</h2>
+<p>O saque-aniversário dá um dinheiro todo ano, mas tem um custo: se você for <b>demitido sem justa causa</b>, recebe só a multa de 40% e o saldo fica preso. Para voltar ao saque-rescisão, o pedido só vale depois de 24 meses.</p>
+<p>Desde 1º de novembro de 2025, a antecipação (empréstimo com o saque-aniversário como garantia) só pode ser feita 90 dias depois da adesão, com parcelas de R$ 100 a R$ 500. A partir de 1º de novembro de 2026, o limite cai de 5 para 3 parcelas por ano.</p>
+<p class="notice">Valores pela tabela oficial (Caixa). Confira o saldo de todas as contas no app FGTS antes de decidir.</p>
+<h2>Perguntas frequentes</h2>
+<div class="faq">
+  <details><summary>Como é calculado o saque-aniversário?</summary><p>Aplica-se a alíquota da faixa do saldo e soma-se a parcela adicional. Exemplo da Caixa: com R$ 1.000 de saldo, o saque é de 40% (R$ 400) mais R$ 50, total de R$ 450.</p></details>
+  <details><summary>Quem aderiu e foi demitido pode sacar tudo?</summary><p>Não. Recebe a multa de 40% paga pela empresa, mas o saldo continua bloqueado. Só o saque anual segue liberado.</p></details>
+  <details><summary>Posso desistir do saque-aniversário?</summary><p>Pode pedir a volta ao saque-rescisão a qualquer momento no app FGTS, mas ela só passa a valer no primeiro dia do 25º mês depois do pedido.</p></details>
 </div>
 HTML,
         ],

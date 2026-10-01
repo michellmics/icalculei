@@ -127,6 +127,20 @@ function format_date(string $isoDate): string
     return $timestamp === false ? $isoDate : date('d/m/Y', $timestamp);
 }
 
+/**
+ * Banner de compartilhamento (og:image 1200×630, gerado por bin/og-images.php). Sem o arquivo, usa o banner geral.
+ * O ?v= muda quando o banner é gerado de novo (WhatsApp e Facebook guardam a imagem pelo endereço).
+ */
+function share_banner(string $name = 'vibe2000'): string
+{
+    $path = '/assets/img/og/' . $name . '.png';
+    if (!is_file(BASE_PATH . '/public' . $path)) {
+        $path = '/assets/img/og/vibe2000.png';
+    }
+
+    return url($path) . '?v=' . (int) @filemtime(BASE_PATH . '/public' . $path);
+}
+
 function format_number(int|float $value, int $decimals = 0): string
 {
     return number_format($value, $decimals, ',', '.');

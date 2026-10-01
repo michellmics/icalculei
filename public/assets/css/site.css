@@ -184,7 +184,7 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: bal
 .cron-runs { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-family: var(--font-number); font-size: 14px; }
 
 /* O visor de resultado, como o de uma calculadora */
-.display { background: var(--display); color: var(--display-ink); padding: 16px 18px; display: grid; gap: 4px; }
+.display { background: var(--display); color: var(--display-ink); padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .display-label { font-family: var(--font-number); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--display-muted); }
 .display-value { font-family: var(--font-number); font-weight: 600; font-size: clamp(26px, 5vw, 38px); line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .display-text { font-family: var(--font-body); font-size: 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -885,3 +885,17 @@ html.install-open { overflow: hidden; }
 .push-status:empty { display: none; }
 .push-status { margin-top: 6px !important; font-size: 14px; font-weight: 600; color: var(--accent); }
 .push-status.is-error { color: #b42318; }
+
+/* Comparador de investimentos: linha da opção que rende mais */
+.invest-table-scroll { margin-top: 14px; overflow-x: auto; }
+.invest-table { min-width: 420px; }
+.invest-table td small { color: var(--display-muted); font-weight: 400; }
+.invest-table tr.is-best td { background: rgba(255, 255, 255, .08); }
+
+/* ---------- Compartilhar a conta (abaixo da calculadora) ---------- */
+.share-bar[hidden] { display: none; }
+.share-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin: 12px 0 4px; }
+.share-bar > span { color: var(--muted); font-size: 14px; font-weight: 600; }
+.share-whatsapp { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 9px 16px; background: #1f7a45; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
+.share-whatsapp:hover { background: #18633a; }
+.share-whatsapp svg { width: 18px; height: 18px; fill: currentColor; flex: none; }

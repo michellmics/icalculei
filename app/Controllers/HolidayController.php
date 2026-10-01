@@ -75,6 +75,7 @@ class HolidayController
         http_response_code(200);
         header('Cache-Control: public, max-age=0, s-maxage=600');
         echo View::render('site/holidays', [
+            'ogImage' => share_banner('feriados'),
             'pageTitle' => $state
                 ? "Feriados {$yearNumber} {$state['in']} {$place}: Estaduais e da Capital | Vibe2000"
                 : "Feriados {$yearNumber}: Calendário Completo dos Feriados Nacionais | Vibe2000",

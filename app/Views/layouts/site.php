@@ -38,8 +38,18 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <meta property="og:title" content="<?= e($pageTitle) ?>">
   <meta property="og:description" content="<?= e($metaDescription) ?>">
   <meta property="og:url" content="<?= e(url($canonicalPath)) ?>">
-  <meta property="og:image" content="<?= e($ogImage ?? url('/icons/site-512.png')) ?>">
+  <?php // Banner do compartilhamento (WhatsApp, Facebook...): das calculadoras e páginas, gerado por bin/og-images.php; notícias usam a foto
+  $shareImage = $ogImage ?? share_banner();
+  $isBanner = str_contains($shareImage, '/assets/img/og/'); ?>
+  <meta property="og:image" content="<?= e($shareImage) ?>">
+  <?php if ($isBanner): ?>
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <?php endif; ?>
+  <meta property="og:image:alt" content="<?= e($pageTitle) ?>">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="<?= e($shareImage) ?>">
   <?php foreach ($structuredData ?? [] as $schema): ?>
     <!-- Dados estruturados (Schema.org) para o Google: app/Services/StructuredData.php -->
     <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>

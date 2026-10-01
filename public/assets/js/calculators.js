@@ -575,6 +575,252 @@
       },
     },
 
+    "investimentos": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="invest-initial">Valor inicial (R$)</label><input id="invest-initial" inputmode="numeric" data-money value="10.000,00"></div>
+            <div class="field"><label for="invest-monthly">Aporte mensal (R$)</label><input id="invest-monthly" inputmode="numeric" data-money value="500,00"></div>
+            <div class="field"><label for="invest-months">Prazo (meses)</label><input id="invest-months" inputmode="numeric" value="24"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="invest-cdi">CDI (% ao ano)</label><input id="invest-cdi" inputmode="decimal" value="13,65"></div>
+            <div class="field"><label for="invest-cdb">CDB (% do CDI)</label><input id="invest-cdb" inputmode="decimal" value="100"></div>
+            <div class="field"><label for="invest-lci">LCI/LCA (% do CDI)</label><input id="invest-lci" inputmode="decimal" value="90"></div>
+            <div class="field"><label for="invest-savings">Poupança (% ao mês)</label><input id="invest-savings" inputmode="decimal" value="0,67"></div>
+          </div>
+          <p class="field-hint" id="invest-rates-hint">CDI e poupança: valores de referência; atualizando com o Banco Central…</p>
+        </div>
+        <div id="invest-result"></div>`,
+      setup() {
+        const SELIC_ABOVE_CDI = 0.10; // Selic fica ~0,10 ponto acima do CDI
+        const TREASURY_CUSTODY_YEARLY = 0.002; // taxa de custódia B3 do Tesouro Selic: 0,20% ao ano
+        const TREASURY_CUSTODY_FREE_UP_TO = 10000; // isento até R$ 10 mil por CPF (cobra só sobre o que passar)
+        const LCI_MIN_MONTHS = 6; // carência mínima das LCI/LCA atreladas ao CDI (Resolução CMN 5.215/2025)
+
+        // IR da renda fixa (tabela regressiva), pelo número de dias aplicados
+        function incomeTaxRate(days) {
+          if (days <= 180) {
+            return 0.225;
+          }
+          if (days <= 360) {
+            return 0.20;
+          }
+          return days <= 720 ? 0.175 : 0.15;
+        }
+        // CDI vale por dia útil (252 no ano): % do CDI se aplica à taxa diária; 21 dias úteis por mês
+        function monthlyRateFromCdi(cdiYearly, percentOfCdi) {
+          const dailyRate = (Math.pow(1 + cdiYearly, 1 / 252) - 1) * percentOfCdi;
+          return Math.pow(1 + dailyRate, 21) - 1;
+        }
+        // Cada depósito (o inicial e cada aporte) rende pelo tempo que ficou aplicado e tem a sua alíquota de IR
+        function simulate({ monthlyRate, months, initial, monthly, hasIncomeTax, custody = false }) {
+          const deposits = [{ amount: initial, monthsInvested: months }];
+          for (let month = 1; month <= months; month++) {
+            deposits.push({ amount: monthly, monthsInvested: months - month });
+          }
+          let gross = 0;
+          let incomeTax = 0;
+          deposits.forEach(({ amount, monthsInvested }) => {
+            const finalValue = amount * Math.pow(1 + monthlyRate, monthsInvested);
+            gross += finalValue;
+            if (hasIncomeTax) {
+              incomeTax += (finalValue - amount) * incomeTaxRate(Math.round((monthsInvested * 365) / 12));
+            }
+          });
+          // Custódia do Tesouro: mês a mês sobre o saldo acima de R$ 10 mil, paga no resgate
+          let fees = 0;
+          if (custody) {
+            let balance = initial;
+            for (let month = 1; month <= months; month++) {
+              balance = balance * (1 + monthlyRate);
+              fees += Math.max(0, balance - TREASURY_CUSTODY_FREE_UP_TO) * (TREASURY_CUSTODY_YEARLY / 12);
+              balance += monthly;
+            }
+          }
+          return { gross, discounts: incomeTax + fees, net: gross - incomeTax - fees };
+        }
+
+        function calculate() {
+          const initial = parseNumber(document.getElementById("invest-initial").value) || 0;
+          const monthly = parseNumber(document.getElementById("invest-monthly").value) || 0;
+          const months = Math.round(parseNumber(document.getElementById("invest-months").value));
+          const [cdi, cdbPercent, lciPercent, savingsRate] = ["invest-cdi", "invest-cdb", "invest-lci", "invest-savings"].map((id) => parseNumber(document.getElementById(id).value));
+          const resultBox = document.getElementById("invest-result");
+          if (!(months > 0) || months > 600 || initial + monthly <= 0 || [cdi, cdbPercent, lciPercent, savingsRate].some(Number.isNaN)) {
+            resultBox.innerHTML = emptyDisplay("Qual rende mais", "Preencha valor, prazo (até 600 meses) e as taxas.");
+            return;
+          }
+          const invested = initial + monthly * months;
+          const base = { months, initial, monthly };
+          const options = [
+            { name: "CDB", note: `${formatNumber(cdbPercent, 1)}% do CDI · com IR`, ...simulate({ ...base, monthlyRate: monthlyRateFromCdi(cdi / 100, cdbPercent / 100), hasIncomeTax: true }) },
+            { name: "LCI / LCA", note: `${formatNumber(lciPercent, 1)}% do CDI · isenta de IR`, available: months >= LCI_MIN_MONTHS, ...simulate({ ...base, monthlyRate: monthlyRateFromCdi(cdi / 100, lciPercent / 100), hasIncomeTax: false }) },
+            { name: "Tesouro Selic", note: "100% da Selic · IR e custódia", ...simulate({ ...base, monthlyRate: monthlyRateFromCdi((cdi + SELIC_ABOVE_CDI) / 100, 1), hasIncomeTax: true, custody: true }) },
+            { name: "Poupança", note: `${formatNumber(savingsRate, 2)}% ao mês · isenta de IR`, ...simulate({ ...base, monthlyRate: savingsRate / 100, hasIncomeTax: false }) },
+          ];
+          const comparable = options.filter((option) => option.available !== false);
+          const best = comparable.reduce((winner, option) => (option.net > winner.net ? option : winner));
+          const savings = options[3];
+          const rows = options.map((option) => {
+            const isBest = option === best;
+            const unavailable = option.available === false;
+            return `<tr${isBest ? ' class="is-best"' : ""}><td><b>${option.name}</b>${isBest ? " 🏆" : ""}<br><small>${unavailable ? `exige pelo menos ${LCI_MIN_MONTHS} meses` : option.note}</small></td>`
+              + `<td><b>${unavailable ? "—" : formatMoney(option.net)}</b></td><td>${unavailable ? "—" : formatMoney(option.discounts)}</td><td>${unavailable ? "—" : formatMoney(option.gross)}</td></tr>`;
+          }).join("");
+          resultBox.innerHTML = display(
+            `Rende mais em ${months} meses: ${best.name}`,
+            formatMoney(best.net),
+            `valor líquido para resgatar · ${formatMoney(best.net - invested)} de rendimento sobre ${formatMoney(invested)} investidos`,
+            [
+              ["Rendimento líquido", formatMoney(best.net - invested)],
+              [best === savings ? "Vantagem sobre o 2º" : "A mais que a poupança", formatMoney(best === savings ? best.net - Math.max(...comparable.filter((option) => option !== best).map((option) => option.net)) : best.net - savings.net)],
+            ],
+            `<div class="invest-table-scroll"><table class="data-table invest-table"><thead><tr><th>Investimento</th><th>Líquido</th><th>IR e taxas</th><th>Bruto</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+          );
+        }
+        onInputs(["invest-initial", "invest-monthly", "invest-months", "invest-cdi", "invest-cdb", "invest-lci", "invest-savings"], calculate);
+
+        // CDI e poupança atuais (Banco Central, pela faixa de indicadores do site); não troca o que a pessoa já digitou
+        const typedByPerson = new Set();
+        ["invest-cdi", "invest-savings"].forEach((id) => document.getElementById(id).addEventListener("input", () => typedByPerson.add(id), { once: true }));
+        const ratesHint = document.getElementById("invest-rates-hint");
+        fetch("/api/indicadores", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+          .then((response) => (response.ok ? response.json() : Promise.reject()))
+          .then((data) => {
+            const parts = [];
+            if (data.cdi && !typedByPerson.has("invest-cdi")) {
+              document.getElementById("invest-cdi").value = formatNumber(data.cdi.yearly, 2);
+              parts.push(`CDI de ${formatNumber(data.cdi.yearly, 2)}% ao ano (${data.cdi.date})`);
+            }
+            if (data.savings && !typedByPerson.has("invest-savings")) {
+              document.getElementById("invest-savings").value = formatNumber(data.savings.monthly, 2);
+              parts.push(`poupança de ${formatNumber(data.savings.monthly, 2)}% no último mês`);
+            }
+            ratesHint.textContent = parts.length ? `Taxas atuais do Banco Central: ${parts.join(" e ")}. Pode mudar para simular outros cenários.` : "Pode mudar as taxas para simular outros cenários.";
+            calculate();
+          })
+          .catch(() => {
+            ratesHint.textContent = "Não foi possível buscar as taxas de hoje; confira o CDI e a poupança e ajuste se precisar.";
+          });
+      },
+    },
+
+    "fgts": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="fgts-salary">Salário bruto (R$)</label><input id="fgts-salary" inputmode="numeric" data-money value="3.000,00"></div>
+            <div class="field"><label for="fgts-balance">Saldo atual do FGTS (R$)</label><input id="fgts-balance" inputmode="numeric" data-money value="5.000,00"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="fgts-months">Daqui a quantos meses</label><input id="fgts-months" inputmode="numeric" value="12"></div>
+            <div class="field"><label for="fgts-type">Contrato</label><select id="fgts-type"><option value="0.08">CLT · 8% do salário</option><option value="0.02">Jovem aprendiz · 2%</option></select></div>
+            <div class="field"><label for="fgts-extras">13º e férias</label><select id="fgts-extras"><option value="yes">Somar o FGTS do 13º e do 1/3 de férias</option><option value="no">Só o salário mensal</option></select></div>
+          </div>
+        </div>
+        <div id="fgts-result"></div>`,
+      setup() {
+        const YEARLY_RETURN = 0.03; // remuneração mínima por lei: 3% ao ano + TR (TR e distribuição de lucros ficam de fora)
+        function calculate() {
+          const salary = parseNumber(document.getElementById("fgts-salary").value) || 0;
+          const currentBalance = parseNumber(document.getElementById("fgts-balance").value) || 0;
+          const months = Math.round(parseNumber(document.getElementById("fgts-months").value));
+          const depositRate = Number(document.getElementById("fgts-type").value);
+          const withExtras = document.getElementById("fgts-extras").value === "yes";
+          const resultBox = document.getElementById("fgts-result");
+          if (!(months >= 0) || months > 480 || salary + currentBalance <= 0) {
+            resultBox.innerHTML = emptyDisplay("Saldo do FGTS", "Preencha o salário ou o saldo e o prazo (até 480 meses).");
+            return;
+          }
+          const monthlyReturn = Math.pow(1 + YEARLY_RETURN, 1 / 12) - 1;
+          const monthlyDeposit = salary * depositRate;
+          // Uma vez por ano: FGTS sobre o 13º (um salário) e sobre o 1/3 de férias
+          const yearlyExtra = withExtras ? salary * depositRate * (1 + 1 / 3) : 0;
+          let balance = currentBalance;
+          let deposited = 0;
+          for (let month = 1; month <= months; month++) {
+            balance = balance * (1 + monthlyReturn) + monthlyDeposit;
+            deposited += monthlyDeposit;
+            if (month % 12 === 0) {
+              balance += yearlyExtra;
+              deposited += yearlyExtra;
+            }
+          }
+          const earnings = balance - currentBalance - deposited;
+          // Multa de 40%: sobre tudo o que foi depositado no emprego atual (aqui: o saldo, como aproximação)
+          const fine = balance * 0.4;
+          resultBox.innerHTML = display(
+            months === 0 ? "Saldo do FGTS hoje" : `Saldo do FGTS em ${months} ${months === 1 ? "mês" : "meses"}`,
+            formatMoney(balance),
+            `depósito de ${formatMoney(monthlyDeposit)} por mês (${formatNumber(depositRate * 100, 0)}% do salário), pago pela empresa`,
+            [
+              ["Depósitos no período", formatMoney(deposited)],
+              ["Rendimento (3% ao ano)", formatMoney(earnings)],
+              ["Multa de 40% na demissão", formatMoney(fine)],
+              ["Saque na demissão sem justa causa", formatMoney(balance + fine)],
+            ],
+            `<p class="field-hint">Quem optou pelo saque-aniversário recebe só a multa de 40% na demissão; o saldo fica guardado. Veja também a <a href="/calculadoras/saque-aniversario-fgts">calculadora do saque-aniversário</a>.</p>`,
+          );
+        }
+        onInputs(["fgts-salary", "fgts-balance", "fgts-months", "fgts-type", "fgts-extras"], calculate);
+      },
+    },
+
+    "saque-aniversario-fgts": {
+      html: `        <div class="calculator-body">
+          <div class="field-row">
+            <div class="field"><label for="anniversary-balance">Saldo total do FGTS (R$)</label><input id="anniversary-balance" inputmode="numeric" data-money value="8.000,00"></div>
+            <div class="field"><label for="anniversary-month">Mês do seu aniversário</label><select id="anniversary-month">
+              <option value="0">janeiro</option><option value="1">fevereiro</option><option value="2">março</option><option value="3">abril</option>
+              <option value="4">maio</option><option value="5">junho</option><option value="6">julho</option><option value="7">agosto</option>
+              <option value="8">setembro</option><option value="9">outubro</option><option value="10">novembro</option><option value="11">dezembro</option>
+            </select></div>
+          </div>
+          <p class="field-hint">Some o saldo de todas as contas do FGTS (empregos atuais e antigos), como aparece no app FGTS.</p>
+        </div>
+        <div id="anniversary-result"></div>`,
+      setup() {
+        // Tabela do saque-aniversário (Lei 13.932/2019; Caixa): alíquota sobre o saldo + parcela adicional
+        const BRACKETS = [
+          { upTo: 500, rate: 0.50, extra: 0 },
+          { upTo: 1000, rate: 0.40, extra: 50 },
+          { upTo: 5000, rate: 0.30, extra: 150 },
+          { upTo: 10000, rate: 0.20, extra: 650 },
+          { upTo: 15000, rate: 0.15, extra: 1150 },
+          { upTo: 20000, rate: 0.10, extra: 1900 },
+          { upTo: Infinity, rate: 0.05, extra: 2900 },
+        ];
+        const MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+        // Mês atual vem selecionado
+        document.getElementById("anniversary-month").value = String(new Date().getMonth());
+
+        function calculate() {
+          const balance = parseNumber(document.getElementById("anniversary-balance").value) || 0;
+          const birthMonth = Number(document.getElementById("anniversary-month").value);
+          const resultBox = document.getElementById("anniversary-result");
+          if (balance <= 0) {
+            resultBox.innerHTML = emptyDisplay("Saque-aniversário", "Digite o saldo do FGTS.");
+            return;
+          }
+          const bracket = BRACKETS.find((item) => balance <= item.upTo);
+          const withdrawal = Math.min(balance, balance * bracket.rate + bracket.extra);
+          // Prazo para sacar: do mês do aniversário até o fim do 2º mês seguinte
+          const lastMonth = MONTH_NAMES[(birthMonth + 2) % 12];
+          const bracketLabel = bracket.upTo === Infinity ? "acima de R$ 20.000,00" : `até ${formatMoney(bracket.upTo)}`;
+          resultBox.innerHTML = display(
+            "Você pode sacar por ano",
+            formatMoney(withdrawal),
+            `${formatNumber(bracket.rate * 100, 0)}% do saldo${bracket.extra ? ` + ${formatMoney(bracket.extra)} de parcela adicional` : ""} (faixa ${bracketLabel})`,
+            [
+              ["Fica na conta", formatMoney(balance - withdrawal)],
+              ["Prazo para sacar", `do 1º dia útil de ${MONTH_NAMES[birthMonth]} ao último dia útil de ${lastMonth}`],
+            ],
+            `<p class="field-hint"><b>Atenção:</b> quem está no saque-aniversário e é demitido sem justa causa recebe a multa de 40%, mas não saca o saldo. Para voltar ao saque-rescisão, o pedido só vale depois de 24 meses.</p>`,
+          );
+        }
+        onInputs(["anniversary-balance", "anniversary-month"], calculate);
+      },
+    },
+
     "correcao-monetaria": {
       html: `        <div class="calculator-body">
           <div class="field-row">
@@ -4030,6 +4276,78 @@ Funciona com textos de qualquer tamanho.</textarea>
   }
 
 
+  /* ---------- Compartilhar a conta (WhatsApp ou link) ----------
+     O link leva os números da calculadora na URL (?id-do-campo=valor) e quem abre já vê a mesma conta.
+     Vão só campos curtos (nada de textos grandes, como JSON ou JWT). utm_source mostra no painel de onde veio a visita. */
+  const SHARE_MAX_VALUE_LENGTH = 40;
+
+  function shareableFields(container) {
+    return [...container.querySelectorAll("input[id], select[id]")]
+      .filter((field) => !["file", "password", "checkbox", "radio", "hidden"].includes(field.type) && !field.disabled && field.value !== "" && field.value.length <= SHARE_MAX_VALUE_LENGTH);
+  }
+  function shareUrl(container, source) {
+    const params = new URLSearchParams();
+    shareableFields(container).forEach((field) => params.set(field.id, field.value));
+    // Botões de escolha (ex.: tipo de cálculo da porcentagem): guarda o botão marcado
+    container.querySelectorAll(".segmented[id]").forEach((group) => {
+      const pressed = group.querySelector('button[aria-pressed="true"]');
+      if (pressed?.dataset.value) {
+        params.set(group.id, pressed.dataset.value);
+      }
+    });
+    params.set("utm_source", source);
+    return `${location.origin}${location.pathname}?${params}`;
+  }
+  // Abriu um link compartilhado: preenche os campos e refaz a conta
+  function applySharedValues(container) {
+    const params = new URLSearchParams(location.search);
+    params.forEach((value, id) => {
+      const element = document.getElementById(id);
+      if (!element || !container.contains(element)) {
+        return;
+      }
+      if (element.classList.contains("segmented")) {
+        element.querySelector(`button[data-value="${CSS.escape(value)}"]`)?.click();
+      } else if (element.matches("input, select") && value.length <= SHARE_MAX_VALUE_LENGTH) {
+        if (element.tagName === "SELECT" && ![...element.options].some((option) => option.value === value)) {
+          return; // opção que não existe (ou ainda não carregou)
+        }
+        element.value = value;
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  }
+  function setupShareBar(container) {
+    const shareBar = document.getElementById("share-bar");
+    if (!shareBar) {
+      return;
+    }
+    shareBar.hidden = false;
+    // Texto da mensagem: o resultado principal da calculadora, se já houver um
+    const resultText = () => {
+      const label = container.querySelector(".display-label")?.textContent.trim();
+      const value = container.querySelector(".display-value")?.textContent.trim();
+      const toolName = document.querySelector(".tool-title")?.textContent.trim() || "Vibe2000";
+      return label && value && value !== "—" ? `📊 ${toolName}: ${label} ${value}` : `📊 ${toolName}`;
+    };
+    document.getElementById("share-whatsapp").addEventListener("click", () => {
+      const message = `${resultText()}\nFiz essa conta no Vibe2000. Veja ou refaça com os seus números:\n${shareUrl(container, "whatsapp")}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+    });
+    const copyButton = document.getElementById("share-copy");
+    copyButton.addEventListener("click", async () => {
+      const link = shareUrl(container, "link");
+      try {
+        await navigator.clipboard.writeText(link);
+        copyButton.textContent = "Link copiado!";
+      } catch {
+        window.prompt("Copie o link:", link);
+      }
+      setTimeout(() => { copyButton.textContent = "Copiar link"; }, 2500);
+    });
+  }
+
   // Monta a calculadora da página (o id vem do atributo data-tool)
   const calculatorElement = document.getElementById("calculator");
   if (calculatorElement) {
@@ -4038,6 +4356,8 @@ Funciona com textos de qualquer tamanho.</textarea>
       calculatorElement.innerHTML = calculator.html;
       formatMoneyFields(calculatorElement);
       calculator.setup();
+      applySharedValues(calculatorElement);
+      setupShareBar(calculatorElement);
       // Avisa o contador de visitas no primeiro cálculo feito nesta página
       calculatorElement.addEventListener("input", () => window.Vibe2000?.registerToolUse(calculatorElement.dataset.tool), { once: true });
       calculatorElement.addEventListener("click", (clickEvent) => {

@@ -14,6 +14,7 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 3. Sempre atualizar `reviewed` (data da revisão) em `content/tools.php`.
    - SEO: toda calculadora tem `seo_title` (busca de cauda longa no começo, até ~55 caracteres) e pelo menos 2 perguntas frequentes em `<details>` (viram FAQPage). Textos curtos e diretos.
 4. Nova calculadora: criar nos dois arquivos com o mesmo id; ela ganha página, sitemap e aparece no diretório sozinha.
+   Depois rode `php bin/og-images.php` para gerar o banner de compartilhamento dela (também ao mudar nome ou descrição).
 5. Campo de valor em dinheiro: `<input id="..." inputmode="numeric" data-money value="1.000,00">` (máscara automática; ler com `parseNumber`).
 
 ## Tabelas oficiais (INSS, IR, seguro-desemprego)
@@ -102,3 +103,14 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Total de visitantes: tabela `site_counters` (`visitors`), soma 1 a cada visitante novo em `VisitController` (`Visit::countNewVisitor`, atômico). Múltiplo de 1.000 → avisa todos os aparelhos de `push_subscriptions`; inscrição vencida (404/410) é apagada.
 - Chaves VAPID criadas sozinhas em `storage/keys/vapid.json` (no .gitignore; o deploy não mexe em storage/). Apagou o arquivo? Ativar de novo no painel.
 - Painel → Visitas, quadro "Avisos no celular": ativar, enviar teste, desativar (admin.js). `sw-painel.js` mostra a notificação e abre o painel ao tocar. No iPhone só no app instalado (iOS 16.4+).
+
+## Investimentos e FGTS
+- `investimentos` (CDB × LCI/LCA × Tesouro Selic × poupança): IR regressivo por depósito, custódia B3 0,20% a.a. acima de R$ 10 mil no Tesouro Selic, LCI/LCA com carência de 6 meses (Res. CMN 5.215/2025). CDI e poupança vêm de `/api/indicadores`. Regras conferidas em 01/10/2026 (MP 1.303 caducou: tabela regressiva e isenção de LCI/LCA mantidas).
+- `fgts` (8% do salário, 3% a.a., multa de 40%) e `saque-aniversario-fgts` (tabela da Caixa, Lei 13.932/2019). Antecipação: a partir de 01/11/2026, até 3 parcelas (atualizar o texto depois dessa data).
+
+## Compartilhar no WhatsApp (todas as calculadoras)
+- Barra `#share-bar` em `site/tool.php`; lógica em `calculators.js` (`setupShareBar`, `applySharedValues`). O link leva os campos curtos na URL (`?id-do-campo=valor`, até 40 caracteres; sem textarea) e os botões `.segmented`; quem abre vê a mesma conta. `utm_source=whatsapp` ou `link` aparece em "Origem" no painel.
+
+## Banner de compartilhamento (og:image)
+- `php bin/og-images.php` gera PNGs 1200×630 em `public/assets/img/og/` (um por calculadora + `vibe2000.png` geral + `feriados.png`), com GD e a fonte IBM Plex Sans (OFL) de `bin/fonts/`. Os PNGs vão no commit; o servidor não desenha nada.
+- `share_banner($nome)` (helpers.php) devolve o endereço com `?v=` da data do arquivo. Notícias usam a própria foto.

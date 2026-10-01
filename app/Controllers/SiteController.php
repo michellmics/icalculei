@@ -43,7 +43,6 @@ class SiteController
             'canonicalPath' => '/',
             'structuredData' => [],
             'ogType' => 'website',
-            'ogImage' => url('/icons/site-512.png'),
             'robotsMeta' => 'index, follow',
             'searchTerm' => '',
             'activeCategory' => null,
@@ -95,6 +94,7 @@ class SiteController
         $this->render('site/tool', [
             'pageTitle' => ($tool['seo_title'] ?? $tool['name']) . ' | Vibe2000',
             'metaDescription' => $tool['lead'],
+            'ogImage' => share_banner($tool['id']),
             'structuredData' => StructuredData::tool($tool, Content::categories()[$tool['category']] ?? ''),
             'tool' => $tool,
             'relatedTools' => array_slice(array_values($sameCategory + $otherCategories), 0, 6),
