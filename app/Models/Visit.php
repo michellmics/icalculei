@@ -47,6 +47,17 @@ class Visit
         Database::execute('DELETE FROM visits_online WHERE seen_at < NOW() - INTERVAL 1 DAY');
     }
 
+    /**
+     * Soma 1 ao total de visitantes desde o início e devolve o novo total.
+     * LAST_INSERT_ID(valor) faz a soma e a leitura juntas: dois visitantes ao mesmo tempo nunca recebem o mesmo número.
+     */
+    public static function countNewVisitor(): int
+    {
+        Database::execute("UPDATE site_counters SET value = LAST_INSERT_ID(value + 1) WHERE name = 'visitors'");
+
+        return (int) Database::fetchValue('SELECT LAST_INSERT_ID()');
+    }
+
     public static function recordToolUse(string $toolId, string $visitor): void
     {
         Database::insert('INSERT INTO tool_uses (tool_id, visitor) VALUES (:tool_id, :visitor)', ['tool_id' => $toolId, 'visitor' => $visitor]);

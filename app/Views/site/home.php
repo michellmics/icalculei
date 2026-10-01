@@ -11,7 +11,6 @@
  * @var array $tools
  * @var array $popularTools
  * @var array $trendingTools
- * @var array $trendingStrip
  * @var array $mostReadNews
  */
 use App\Core\View;
@@ -22,16 +21,11 @@ use App\Services\Content;
 $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
 ?>
 <main class="page">
-  <div class="trending" aria-label="Em alta">
-    <b>EM ALTA</b>
-    <div class="trending-links">
-      <?php foreach ($trendingStrip as $item): ?>
-        <?php if ($item['type'] === 'tool' && ($tool = Content::tool($item['id'])) !== null): ?>
-          <a href="/calculadoras/<?= e($tool['id']) ?>"><?= e($tool['symbol'] . ' ' . $tool['name']) ?></a>
-        <?php elseif ($item['type'] === 'news' && ($article = Content::article($item['id'])) !== null): ?>
-          <a href="/noticias/<?= e($article['id']) ?>">📰 <?= e($article['title']) ?></a>
-        <?php endif; ?>
-      <?php endforeach; ?>
+  <!-- Faixa de indicadores (Bitcoin, CDI, combustíveis, poupança, Focus): preenchida pelo site.js a partir de /api/indicadores -->
+  <div class="trending ticker" aria-label="Indicadores">
+    <b>INDICADORES</b>
+    <div class="ticker-viewport">
+      <div class="ticker-track" id="market-ticker"><span class="ticker-loading">carregando indicadores…</span></div>
     </div>
   </div>
 
@@ -104,11 +98,6 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
           <?php foreach ($popularTools as $tool): ?><?= View::partial('tool-card', ['tool' => $tool]) ?><?php endforeach; ?>
         </div>
 
-        <div class="section-head"><h2>Últimas notícias</h2><a class="pill-button" href="/noticias">ver todas</a></div>
-        <div class="news-grid news-grid-home">
-          <?php foreach (array_slice($news, 0, 4) as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
-        </div>
-
         <div class="section-head"><h2>Todas as calculadoras</h2><span>por categoria</span></div>
         <div class="directory">
           <?php foreach ($categories as $categoryKey => $categoryName): ?>
@@ -171,6 +160,23 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
         <p>Digite os preços do posto e descubra na hora qual compensa abastecer, pela regra dos 70%.</p>
         <span class="trip-promo-button"><svg class="trip-promo-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9a1 1 0 0 1 1 1v8h1a2 2 0 0 1 2 2v4.5a1 1 0 0 0 2 0V9.4l-2.7-2.7 1.4-1.4 2.7 2.7a2 2 0 0 1 .6 1.4v8.1a3 3 0 0 1-6 0V13h-1v7h1v2H3v-2h1V3a1 1 0 0 1 1-1zm1 2v6h7V4H6z"/></svg> Ver qual compensa</span>
       </a>
+      <!-- Chamada do calendário de feriados, com o próximo feriado nacional numa "folhinha" -->
+      <a class="side-box holiday-promo" href="/feriados/<?= date('Y') ?>">
+        <div class="holiday-promo-top">
+          <?php if ($nextHoliday !== null): ?>
+            <?php $nextDate = new DateTimeImmutable($nextHoliday['holiday']['date']); ?>
+            <span class="holiday-promo-icon" aria-hidden="true"><span><?= ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][(int) $nextDate->format('n') - 1] ?></span><b><?= $nextDate->format('j') ?></b></span>
+            <div>
+              <h3>Próximo feriado: <?= e($nextHoliday['holiday']['names'][0]) ?></h3>
+              <p><?= e($nextHoliday['holiday']['weekday']) ?>, <?= $nextHoliday['daysUntil'] === 0 ? 'é hoje!' : ($nextHoliday['daysUntil'] === 1 ? 'é amanhã' : 'daqui a ' . $nextHoliday['daysUntil'] . ' dias') ?><?= $nextHoliday['holiday']['bridge'] !== '' ? ' · ' . e($nextHoliday['holiday']['bridge']) : '' ?></p>
+            </div>
+          <?php else: ?>
+            <div><h3>Calendário de feriados</h3></div>
+          <?php endif; ?>
+        </div>
+        <p>Todos os feriados de <?= date('Y') ?>: nacionais, do seu estado e da sua capital, com os feriadões do ano.</p>
+        <span class="trip-promo-button">📅 Ver calendário de feriados</span>
+      </a>
       <section class="side-box install-side-box" data-install-area hidden>
         <h3>Vibe2000 no celular</h3>
         <div class="install-side-row">
@@ -192,13 +198,6 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
             <?= View::partial('link-item', ['href' => '/calculadoras/' . $tool['id'], 'symbol' => $tool['symbol'], 'title' => $tool['name'], 'subtitle' => $tool['description']]) ?>
           <?php endforeach; ?>
         </ul>
-      </section>
-      <section class="side-box quick-box">
-        <h3>Conta rápida</h3>
-        <div class="field"><label for="quick-percent">Quanto é</label>
-          <div class="sentence"><input id="quick-percent" inputmode="decimal" value="20" aria-label="Porcentagem">% de<input id="quick-value" inputmode="decimal" value="150" aria-label="Valor"></div>
-        </div>
-        <p class="quick-result">= <b id="quick-result">30</b></p>
       </section>
     </aside>
   </div>

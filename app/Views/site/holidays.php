@@ -20,14 +20,16 @@ $holidaysByDate = array_column($holidays, null, 'date');
 $basePath = '/feriados/';
 $stateSuffix = $stateCode ? '/' . $stateCode : '';
 $formatDay = fn (string $date) => (new DateTimeImmutable($date))->format('d/m');
+// "no Rio de Janeiro" → "do Rio de Janeiro"; "na Bahia" → "da Bahia"; "em São Paulo" → "de São Paulo"
+$ofState = $state ? ['no' => 'do', 'na' => 'da', 'em' => 'de'][$state['in']] . ' ' . $state['name'] : '';
 ?>
 <main class="page">
   <nav class="breadcrumb" aria-label="Você está em">
     <a href="/">Início</a> › <a href="/feriados/<?= $year ?>">Feriados <?= $year ?></a><?php if ($state): ?> › <span><?= e($state['name']) ?></span><?php endif; ?>
   </nav>
-  <h1 class="tool-title">Feriados <?= $year ?><?= $state ? ' em ' . e($state['name']) : '' ?></h1>
+  <h1 class="tool-title">Feriados <?= $year ?><?= $state ? ' ' . e($state['in'] . ' ' . $state['name']) : '' ?></h1>
   <p class="tool-lead"><?= $state
-      ? 'Feriados nacionais, estaduais de ' . e($state['name']) . ' e da capital ' . e($state['capital']) . ', com dia da semana, feriadões e calendário para baixar.'
+      ? 'Feriados nacionais, estaduais ' . e($ofState) . ' e da capital ' . e($state['capital']) . ', com dia da semana, feriadões e calendário para baixar.'
       : 'Todos os feriados nacionais e pontos facultativos do ano, com dia da semana, feriadões e os dias úteis de cada mês. Escolha o estado para ver também os estaduais e da capital.' ?></p>
 
   <div class="holiday-controls">

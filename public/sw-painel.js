@@ -2,10 +2,11 @@
 //
 // O painel mostra dados de visitas e mensagens: nada disso é guardado no aparelho.
 // Tudo vem sempre da internet; sem conexão, aparece só o aviso de offline.
+// Também recebe as notificações push (aviso a cada 1.000 visitantes; ver app/Services/PushNotifier.php).
 //
 // Mudou a lógica deste arquivo? Aumente o CACHE_VERSION.
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const PANEL_CACHE = `vibe2000-painel-${CACHE_VERSION}`;
 const OFFLINE_PAGE = "/offline-painel.html";
 
@@ -30,4 +31,34 @@ self.addEventListener("fetch", (fetchEvent) => {
   if (fetchEvent.request.mode === "navigate") {
     fetchEvent.respondWith(fetch(fetchEvent.request).catch(() => caches.match(OFFLINE_PAGE)));
   }
+});
+
+// Notificação push: o servidor manda { title, body, url } criptografado; o navegador já entrega aberto aqui
+self.addEventListener("push", (pushEvent) => {
+  let message = {};
+  try {
+    message = pushEvent.data ? pushEvent.data.json() : {};
+  } catch {
+    message = { body: pushEvent.data ? pushEvent.data.text() : "" };
+  }
+  pushEvent.waitUntil(self.registration.showNotification(message.title || "Vibe2000", {
+    body: message.body || "",
+    icon: "/icons/painel-192.png",
+    data: { url: message.url || "/painel/visitas" },
+  }));
+});
+
+// Tocou na notificação: volta para o painel já aberto ou abre a página do aviso
+self.addEventListener("notificationclick", (clickEvent) => {
+  clickEvent.notification.close();
+  const url = clickEvent.notification.data?.url || "/painel/visitas";
+  clickEvent.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const panelWindow = windows.find((client) => new URL(client.url).pathname.startsWith("/painel"));
+      if (panelWindow) {
+        return panelWindow.navigate(url).then((client) => (client || panelWindow).focus());
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
 });

@@ -69,7 +69,7 @@ class TripController
             Http::json(['error' => $exception->getMessage()], $exception->getCode() ?: 400);
         } catch (Throwable $exception) {
             ErrorHandler::log('[viagem] erro: ' . $exception->getMessage());
-            Http::json(['error' => 'Não foi possível calcular a rota agora. Tente de novo em instantes.'], 502);
+            Http::json(['error' => 'Não foi possível calcular a rota agora. Tente de novo em instantes.'], 503);
         }
     }
 }

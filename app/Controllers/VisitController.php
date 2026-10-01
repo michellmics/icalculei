@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\ErrorHandler;
 use App\Core\Http;
 use App\Core\Session;
 use App\Models\Visit;
 use App\Services\Content;
+use App\Services\PushNotifier;
 use PDOException;
+use Throwable;
 
 /**
  * Contador de visitas. Chamado pelo site.js em todas as páginas públicas:
@@ -81,6 +84,9 @@ class VisitController
             $page = $this->pageLabel((string) ($input['p'] ?? ''));
             if ($type === 'ver') {
                 Visit::recordPageView($visitor, $isNewVisitor, $page, $this->detectSource($input, $host), $device);
+                if ($isNewVisitor) {
+                    $this->countNewVisitor();
+                }
             }
             Visit::markOnline($visitor, $page, $device);
 
@@ -92,6 +98,18 @@ class VisitController
         }
 
         Http::noContent();
+    }
+
+    /**
+     * Total de visitantes + aviso no app do painel a cada 1.000. Falha aqui nunca atrapalha a contagem da visita.
+     */
+    private function countNewVisitor(): void
+    {
+        try {
+            PushNotifier::checkVisitorMilestone(Visit::countNewVisitor());
+        } catch (Throwable $exception) {
+            ErrorHandler::log('[push] contador de visitantes: ' . $exception->getMessage());
+        }
     }
 
     /**

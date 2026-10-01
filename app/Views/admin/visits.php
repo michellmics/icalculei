@@ -6,6 +6,7 @@
  * @var array|null $stats
  * @var array|null $online
  * @var string|null $databaseError
+ * @var array|null $push         quadro "Avisos no celular" (publicKey, devices, totalVisitors, nextMilestone)
  */
 use App\Services\VisitStats;
 
@@ -96,6 +97,27 @@ $barList = function (array $items, string $color, string $unit): string {
       </ul>
     </div>
   </section>
+
+  <!-- Avisos no celular (notificação push no app do painel a cada 1.000 visitantes): admin.js cuida dos botões -->
+  <?php if ($push !== null): ?>
+    <section class="admin-card push-card" id="push-card" data-public-key="<?= e($push['publicKey']) ?>" data-csrf="<?= e(\App\Core\Csrf::token()) ?>">
+      <div>
+        <h3>🔔 Avisos no celular</h3>
+        <p class="muted">
+          Total desde o início: <b><?= format_number($push['totalVisitors']) ?> visitantes</b> · próximo aviso aos <b><?= format_number($push['nextMilestone']) ?></b>
+          · <span id="push-devices"><?= $push['devices'] === 1 ? '1 aparelho recebendo' : format_number($push['devices']) . ' aparelhos recebendo' ?></span>
+        </p>
+        <p class="push-status" id="push-status" aria-live="polite"></p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="action-button" id="push-enable" hidden>Ativar neste aparelho</button>
+        <button type="button" class="secondary-button" id="push-test" hidden>Enviar teste</button>
+        <button type="button" class="secondary-button" id="push-disable" hidden>Desativar neste aparelho</button>
+      </div>
+    </section>
+  <?php else: ?>
+    <section class="admin-card push-card"><p class="muted">🔔 Avisos no celular: falta criar as tabelas. Rode as migrations pendentes em <a href="/painel/atualizar">Atualizar site</a>.</p></section>
+  <?php endif; ?>
 
   <section class="kpi-grid">
     <article class="admin-card kpi"><small>Visitantes hoje</small><strong><?= format_number($today['visitors']) ?></strong>

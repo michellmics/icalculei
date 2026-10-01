@@ -291,6 +291,61 @@
       });
   }
 
+  /* ---------- Faixa "Indicadores" da página inicial ---------- */
+  // Dados do servidor (/api/indicadores), que guarda cada fonte em cache. Item sem dados não aparece.
+  const ticker = document.getElementById("market-ticker");
+  if (ticker) {
+    const money = (value, decimals = 2) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+    const number = (value, decimals = 2) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+    // Seta colorida da variação (verde sobe, vermelho desce)
+    const change = (percent) => {
+      if (percent === null || percent === undefined || Number.isNaN(percent)) {
+        return "";
+      }
+      const direction = percent > 0.005 ? "is-up" : percent < -0.005 ? "is-down" : "is-flat";
+      const arrow = direction === "is-up" ? "▲" : direction === "is-down" ? "▼" : "●";
+      return ` <span class="change ${direction}">${arrow} ${number(Math.abs(percent))}%</span>`;
+    };
+    const item = (href, label, valueHtml, title) => `<a href="${href}" title="${title}"><span class="ticker-label">${label}</span> <b>${valueHtml}</b></a>`;
+
+    fetch("/api/indicadores", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((data) => {
+        const items = [];
+        if (data.bitcoin) {
+          items.push(item("/calculadoras/moedas", "₿ Bitcoin", money(data.bitcoin.value, 0) + change(data.bitcoin.changePercent), "Preço do Bitcoin em reais (AwesomeAPI), variação nas últimas 24 horas"));
+        }
+        if (data.cdi) {
+          items.push(item("/calculadoras/correcao-monetaria", "CDI", `${number(data.cdi.yearly)}% a.a.`, `CDI ao ano (Banco Central), ${data.cdi.date}`));
+        }
+        const fuelNames = { gasoline: "⛽ Gasolina", ethanol: "Etanol", diesel: "Diesel S10" };
+        for (const [key, label] of Object.entries(fuelNames)) {
+          const fuel = data.fuel?.prices?.[key];
+          if (fuel) {
+            items.push(item("/calculadoras/alcool-gasolina", label, money(fuel.value) + change(fuel.changePercent), `Preço médio no Brasil (ANP), semana até ${data.fuel.week}; variação sobre a semana anterior`));
+          }
+        }
+        if (data.savings) {
+          items.push(item("/calculadoras/correcao-monetaria", "Poupança", `${number(data.savings.monthly, 2)}% ao mês`, "Rendimento da poupança no mês (Banco Central)"));
+        }
+        if (data.focus) {
+          items.push(item("/calculadoras/correcao-monetaria", `IPCA esperado ${data.focus.year}`, `${number(data.focus.ipca)}%`, `Mediana do boletim Focus (Banco Central), ${data.focus.date}`));
+          items.push(item("/calculadoras/juros-compostos", `Selic no fim de ${data.focus.year}`, `${number(data.focus.selic)}%`, `Expectativa do mercado, boletim Focus (Banco Central), ${data.focus.date}`));
+        }
+        if (items.length === 0) {
+          ticker.closest(".ticker").hidden = true;
+          return;
+        }
+        // Conteúdo duplicado: a faixa rola sem emenda (anda até a metade e recomeça)
+        const content = items.join("");
+        ticker.innerHTML = `<span class="ticker-group">${content}</span><span class="ticker-group" aria-hidden="true">${content}</span>`;
+        ticker.classList.add("is-running");
+      })
+      .catch(() => {
+        ticker.closest(".ticker").hidden = true;
+      });
+  }
+
   /* ---------- Calendário de feriados: escolher o estado abre a página dele ---------- */
   const holidayState = document.getElementById("holiday-state");
   if (holidayState) {

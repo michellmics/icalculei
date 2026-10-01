@@ -258,4 +258,127 @@
     }
   }
   startCharts();
+
+  /* ---------- Avisos no celular (notificação push a cada 1.000 visitantes) ---------- */
+  // O aparelho se inscreve no serviço de push do navegador e manda a inscrição para o servidor guardar.
+  // No iPhone só funciona com o app do painel instalado (Compartilhar → Adicionar à Tela de Início).
+  const pushCard = document.getElementById("push-card");
+  if (pushCard) {
+    const enableButton = document.getElementById("push-enable");
+    const testButton = document.getElementById("push-test");
+    const disableButton = document.getElementById("push-disable");
+    const statusText = document.getElementById("push-status");
+    const devicesText = document.getElementById("push-devices");
+    const publicKey = pushCard.dataset.publicKey;
+
+    const showStatus = (message, isError = false) => {
+      statusText.textContent = message;
+      statusText.classList.toggle("is-error", isError);
+    };
+    const showDevices = (count) => {
+      devicesText.textContent = count === 1 ? "1 aparelho recebendo" : `${count.toLocaleString("pt-BR")} aparelhos recebendo`;
+    };
+    const showButtons = (isSubscribed) => {
+      enableButton.hidden = isSubscribed;
+      testButton.hidden = !isSubscribed;
+      disableButton.hidden = !isSubscribed;
+    };
+    // Chave VAPID em base64url → bytes (formato que o pushManager pede)
+    const keyToBytes = (base64Url) => {
+      const base64 = (base64Url + "=".repeat((4 - (base64Url.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+      return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+    };
+    const sameKey = (subscription) => {
+      const subscriptionKey = subscription.options?.applicationServerKey;
+      if (!subscriptionKey) {
+        return true; // navegador não informa: assume que é a mesma
+      }
+      const expected = keyToBytes(publicKey);
+      const current = new Uint8Array(subscriptionKey);
+      return current.length === expected.length && current.every((byte, index) => byte === expected[index]);
+    };
+    const send = (url, data = {}) => fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ ...data, _csrf_token: pushCard.dataset.csrf }),
+    }).then((response) => response.json().catch(() => ({})).then((body) => (response.ok ? body : Promise.reject(new Error(body.error || "O servidor não respondeu.")))));
+
+    const isIphone = /iphone|ipad/i.test(navigator.userAgent);
+    const isInstalledApp = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      showStatus(isIphone && !isInstalledApp
+        ? "No iPhone, instale o app do painel (Compartilhar → Adicionar à Tela de Início) e ative por ele."
+        : "Este navegador não aceita notificações.", true);
+    } else {
+      navigator.serviceWorker.ready.then(async (registration) => {
+        let subscription = await registration.pushManager.getSubscription();
+        // Inscrição feita com uma chave antiga (servidor trocou as chaves): descarta e pede de novo
+        if (subscription && !sameKey(subscription)) {
+          await subscription.unsubscribe();
+          subscription = null;
+        }
+        if (subscription && Notification.permission === "granted") {
+          showButtons(true);
+          showStatus("Ativado neste aparelho.");
+          send("/painel/notificacoes", subscription.toJSON()).then((result) => showDevices(result.devices)).catch(() => {});
+        } else {
+          showButtons(false);
+          if (Notification.permission === "denied") {
+            showStatus("As notificações estão bloqueadas para este site. Libere nas configurações do navegador e recarregue.", true);
+          }
+        }
+
+        enableButton.addEventListener("click", async () => {
+          enableButton.disabled = true;
+          try {
+            if (await Notification.requestPermission() !== "granted") {
+              throw new Error("Permissão negada. Libere as notificações nas configurações do navegador.");
+            }
+            const newSubscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(publicKey) });
+            const result = await send("/painel/notificacoes", newSubscription.toJSON());
+            showDevices(result.devices);
+            showButtons(true);
+            showStatus("Pronto! Este aparelho vai receber os avisos. Toque em \"Enviar teste\" para conferir.");
+          } catch (error) {
+            showStatus(error.message || "Não foi possível ativar.", true);
+          } finally {
+            enableButton.disabled = false;
+          }
+        });
+
+        testButton.addEventListener("click", async () => {
+          testButton.disabled = true;
+          showStatus("Enviando…");
+          try {
+            const result = await send("/painel/notificacoes/teste");
+            showDevices(result.devices);
+            showStatus(result.delivered > 0 ? `Teste enviado para ${result.delivered} aparelho(s). Deve chegar em alguns segundos.` : "Nenhum aparelho recebeu. Desative e ative de novo.", result.delivered === 0);
+          } catch (error) {
+            showStatus(error.message, true);
+          } finally {
+            testButton.disabled = false;
+          }
+        });
+
+        disableButton.addEventListener("click", async () => {
+          disableButton.disabled = true;
+          try {
+            const current = await registration.pushManager.getSubscription();
+            if (current) {
+              const result = await send("/painel/notificacoes/remover", { endpoint: current.endpoint });
+              showDevices(result.devices);
+              await current.unsubscribe();
+            }
+            showButtons(false);
+            showStatus("Desativado neste aparelho.");
+          } catch (error) {
+            showStatus(error.message, true);
+          } finally {
+            disableButton.disabled = false;
+          }
+        });
+      });
+    }
+  }
 })();

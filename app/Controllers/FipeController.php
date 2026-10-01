@@ -86,7 +86,7 @@ class FipeController
             Http::json(['error' => $exception->getMessage()], $exception->getCode() ?: 400);
         } catch (Throwable $exception) {
             ErrorHandler::log('[fipe] erro: ' . $exception->getMessage());
-            Http::json(['error' => 'A Tabela FIPE não respondeu agora. Tente de novo em instantes.'], 502);
+            Http::json(['error' => 'A Tabela FIPE não respondeu agora. Tente de novo em instantes.'], 503);
         }
     }
 }

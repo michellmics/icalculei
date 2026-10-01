@@ -32,6 +32,7 @@ $tabs = [
   <link rel="stylesheet" href="<?= e(asset('css/site.css')) ?>">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
   <script src="<?= e(asset('js/admin.js')) ?>" defer></script>
+  <script src="<?= e(asset('js/app-shell.js')) ?>" defer></script>
 </head>
 <body>
   <div class="admin-shell">
@@ -63,5 +64,12 @@ $tabs = [
       <?= $content ?>
     </main>
   </div>
+  <!-- Navegação do app instalado (PWA): só aparece no app em telas de celular (assets/js/app-shell.js) -->
+  <nav class="app-nav" id="app-nav" aria-label="Navegação do app" hidden>
+    <button type="button" data-app-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Voltar</span></button>
+    <button type="button" data-app-action="forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg><span>Avançar</span></button>
+    <a href="/painel/visitas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Visitas</span></a>
+    <button type="button" data-app-action="reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span>Atualizar</span></button>
+  </nav>
 </body>
 </html>

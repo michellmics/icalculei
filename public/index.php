@@ -62,6 +62,7 @@ $router->get('/api/fipe/historico', [FipeController::class, 'history']);
 // Índices econômicos da página inicial (IPCA, IGP-M, Selic)
 $router->get('/api/indices', [IndicatorsController::class, 'show']);
 $router->get('/api/indices/serie', [IndicatorsController::class, 'series']);
+$router->get('/api/indicadores', [IndicatorsController::class, 'ticker']);
 
 // Painel administrativo
 $router->get('/painel', [AdminController::class, 'loginForm']);
@@ -74,6 +75,9 @@ $router->get('/painel/mensagens', [AdminController::class, 'messages']);
 $router->post('/painel/mensagens/{id}', [AdminController::class, 'updateMessage']);
 $router->get('/painel/atualizar', [AdminController::class, 'deployPage']);
 $router->post('/painel/atualizar', [AdminController::class, 'deploy']);
+$router->post('/painel/notificacoes', [AdminController::class, 'pushSubscribe']);
+$router->post('/painel/notificacoes/remover', [AdminController::class, 'pushUnsubscribe']);
+$router->post('/painel/notificacoes/teste', [AdminController::class, 'pushTest']);
 
 $path = '/' . trim(rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH)), '/');
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $path === '/' ? '/' : $path);

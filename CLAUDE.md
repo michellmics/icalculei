@@ -78,3 +78,24 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Séries mensais do Banco Central em `app/Services/MonetaryIndexes.php` (IPCA 433, IGP-M 189, INPC 188, IGP-DI 190, Selic 4390, CDI 4391, poupança 195 a partir de 2012). Cache 12 h em `storage/cache/indexes` com atualização incremental (só os meses novos); se o Banco Central cair, usa a última versão.
 - Rota `/api/indices/serie?indice=...`; a conta (composta, do mês inicial ao final) é feita no navegador.
 - Atalho na página inicial: `.correction-promo`, acima das notícias do destaque.
+
+## Feriados (/feriados/{ano} e /feriados/{ano}/{uf})
+- Dados em `content/holidays.php` (nacionais, facultativos, estaduais e das 27 capitais; datas "mm-dd" ou relativas à Páscoa). Lógica em `app/Services/Holidays.php`, páginas em `HolidayController` (+ `.ics` em `/agenda`). Conferir datas locais todo ano e atualizar `reviewed`.
+- Card "Próximo feriado" na página inicial (canto inferior direito, no lugar da antiga conta rápida). 56 páginas no sitemap (ano atual e o próximo, nacional e por estado).
+
+## App instalado (PWA): `public/assets/js/app-shell.js`
+- Só no modo app: puxar para atualizar e barra de navegação no rodapé (Voltar, Avançar, Início, Atualizar) em telas de celular. Marcação `#app-nav` nos layouts do site e do painel.
+
+## FIPE em produção
+- O site da FIPE pode bloquear o servidor da hospedagem: `FipeClient` cai para a API da Parallelum (listas e valor atual; sem histórico) e a tela avisa. Erros de serviços externos respondem 503 (o Cloudflare troca respostas 502 pela página de erro dele).
+
+## Faixa "Indicadores" (topo da página inicial)
+- `app/Services/MarketTicker.php` + rota `/api/indicadores`; preenchida e animada pelo site.js. Itens: Bitcoin (AwesomeAPI), CDI (BCB 4389), gasolina/etanol/diesel S10 (planilha semanal da ANP, aba BRASIL, semana atual × anterior), poupança (BCB 195) e Focus (IPCA e Selic esperados para o ano).
+- Cache por item em `storage/cache/ticker`; fonte que falhar usa o último valor guardado ou some da faixa.
+- Teste local: o `php -S` atende um pedido por vez e às vezes derruba CSS/fontes no primeiro carregamento (e com o service worker ativo). Nos testes com puppeteer use `setBypassServiceWorker(true)`.
+
+## Notificações push no app do painel (aviso a cada 1.000 visitantes)
+- `app/Services/WebPush.php` (VAPID + criptografia aes128gcm só com openssl; conferido com os valores do RFC 8291) e `app/Services/PushNotifier.php` (`VISITOR_MILESTONE`).
+- Total de visitantes: tabela `site_counters` (`visitors`), soma 1 a cada visitante novo em `VisitController` (`Visit::countNewVisitor`, atômico). Múltiplo de 1.000 → avisa todos os aparelhos de `push_subscriptions`; inscrição vencida (404/410) é apagada.
+- Chaves VAPID criadas sozinhas em `storage/keys/vapid.json` (no .gitignore; o deploy não mexe em storage/). Apagou o arquivo? Ativar de novo no painel.
+- Painel → Visitas, quadro "Avisos no celular": ativar, enviar teste, desativar (admin.js). `sw-painel.js` mostra a notificação e abre o painel ao tocar. No iPhone só no app instalado (iOS 16.4+).

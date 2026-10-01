@@ -76,10 +76,10 @@ class HolidayController
         header('Cache-Control: public, max-age=0, s-maxage=600');
         echo View::render('site/holidays', [
             'pageTitle' => $state
-                ? "Feriados {$yearNumber} em {$place}: Estaduais e de {$state['capital']} | Vibe2000"
+                ? "Feriados {$yearNumber} {$state['in']} {$place}: Estaduais e da Capital | Vibe2000"
                 : "Feriados {$yearNumber}: Calendário Completo dos Feriados Nacionais | Vibe2000",
             'metaDescription' => $state
-                ? "Todos os feriados de {$yearNumber} em {$state['name']}: nacionais, estaduais e da capital {$state['capital']}, com dia da semana, feriadões e calendário para baixar."
+                ? "Todos os feriados de {$yearNumber} {$state['in']} {$state['name']}: nacionais, estaduais e da capital {$state['capital']}, com dia da semana, feriadões e calendário para baixar."
                 : "Todos os feriados nacionais e pontos facultativos de {$yearNumber}, com dia da semana, feriadões, dias úteis de cada mês e calendário para baixar.",
             'canonicalPath' => '/feriados/' . $yearNumber . ($stateCode ? '/' . $stateCode : ''),
             'pageKey' => 'feriados',

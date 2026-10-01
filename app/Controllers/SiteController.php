@@ -12,6 +12,7 @@ use App\Core\View;
 use App\Models\ContactMessage;
 use App\Models\RateLimit;
 use App\Services\Content;
+use App\Services\Holidays;
 use App\Services\StructuredData;
 
 /**
@@ -72,9 +73,9 @@ class SiteController
             'tools' => Content::tools(),
             'popularTools' => Content::toolsByIds($showcase['popular_tools']),
             'trendingTools' => Content::toolsByIds($showcase['trending_tools']),
-            'trendingStrip' => $showcase['trending_strip'],
             'mostReadNews' => Content::newsByIds($showcase['most_read_news']),
             'canonicalPath' => $activeCategory !== null && $searchTerm === '' ? '/?categoria=' . $activeCategory : '/',
+            'nextHoliday' => Holidays::next(),
         ], 'inicio');
     }
 
@@ -265,6 +266,13 @@ class SiteController
         }
         foreach ($news as $article) {
             $pages[] = ['/noticias/' . $article['id'], $article['date']];
+        }
+        // Calendário de feriados: ano atual e o próximo, nacional e por estado
+        foreach ([(int) date('Y'), (int) date('Y') + 1] as $holidayYear) {
+            $pages[] = ['/feriados/' . $holidayYear, Holidays::reviewed()];
+            foreach (array_keys(Holidays::states()) as $stateCode) {
+                $pages[] = ['/feriados/' . $holidayYear . '/' . $stateCode, Holidays::reviewed()];
+            }
         }
         foreach (['/sobre', '/contato', '/termos-de-uso', '/privacidade'] as $institutionalPath) {
             $pages[] = [$institutionalPath, null];

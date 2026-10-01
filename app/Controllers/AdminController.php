@@ -5,20 +5,25 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Http;
 use App\Core\Session;
 use App\Core\View;
 use App\Models\ContactMessage;
+use App\Models\PushSubscription;
 use App\Models\RateLimit;
 use App\Services\Content;
 use App\Services\Deployer;
 use App\Services\Migrator;
+use App\Services\PushNotifier;
+use App\Services\WebPush;
 use App\Services\VisitStats;
 use PDOException;
 use Throwable;
 
 /**
- * Área administrativa (/painel): login, visitas, uso das calculadoras, mensagens e atualização do site.
+ * Área administrativa (/painel): login, visitas, uso das calculadoras, mensagens, atualização do site
+ * e notificações push no app do painel.
  */
 class AdminController
 {
@@ -205,7 +210,101 @@ class AdminController
             'stats' => $stats,
             'online' => $online,
             'databaseError' => $databaseError,
+            'push' => $this->pushStatus(),
         ]);
+    }
+
+    /**
+     * Dados do quadro "Avisos no celular" (Visitas). null = tabelas ainda não criadas (migrations pendentes).
+     */
+    private function pushStatus(): ?array
+    {
+        try {
+            $totalVisitors = (int) Database::fetchValue("SELECT value FROM site_counters WHERE name = 'visitors'");
+            $milestone = PushNotifier::VISITOR_MILESTONE;
+
+            return [
+                'publicKey' => WebPush::publicKey(),
+                'devices' => PushSubscription::count(),
+                'totalVisitors' => $totalVisitors,
+                'nextMilestone' => (intdiv($totalVisitors, $milestone) + 1) * $milestone,
+            ];
+        } catch (Throwable $exception) {
+            return null;
+        }
+    }
+
+    /**
+     * Notificações: o app do painel manda a inscrição deste aparelho (JSON) e o servidor guarda.
+     *   POST /painel/notificacoes           { endpoint, keys: { p256dh, auth }, _csrf_token }
+     *   POST /painel/notificacoes/remover   { endpoint, _csrf_token }
+     *   POST /painel/notificacoes/teste     { _csrf_token } → manda um aviso de teste para todos os aparelhos
+     */
+    public function pushSubscribe(): void
+    {
+        $input = $this->pushInput();
+        $endpoint = (string) ($input['endpoint'] ?? '');
+        $publicKey = (string) ($input['keys']['p256dh'] ?? '');
+        $authSecret = (string) ($input['keys']['auth'] ?? '');
+        $isValid = str_starts_with($endpoint, 'https://') && strlen($endpoint) <= 700
+            && preg_match('/^[A-Za-z0-9_-]{80,100}$/', $publicKey) && preg_match('/^[A-Za-z0-9_-]{16,30}$/', $authSecret);
+        if (!$isValid) {
+            Http::json(['error' => 'Inscrição inválida.'], 422);
+        }
+        PushSubscription::save($endpoint, $publicKey, $authSecret, $this->deviceName());
+        Http::json(['ok' => true, 'devices' => PushSubscription::count()]);
+    }
+
+    public function pushUnsubscribe(): void
+    {
+        $input = $this->pushInput();
+        PushSubscription::deleteByEndpoint((string) ($input['endpoint'] ?? ''));
+        Http::json(['ok' => true, 'devices' => PushSubscription::count()]);
+    }
+
+    public function pushTest(): void
+    {
+        $this->pushInput();
+        $delivered = PushNotifier::notifyAll('🔔 Teste do Vibe2000', 'As notificações estão funcionando. Você vai receber um aviso a cada ' . format_number(PushNotifier::VISITOR_MILESTONE) . ' visitantes.');
+        Http::json(['ok' => true, 'delivered' => $delivered, 'devices' => PushSubscription::count()]);
+    }
+
+    /**
+     * Corpo JSON dos pedidos de notificação, já conferindo login e CSRF.
+     */
+    private function pushInput(): array
+    {
+        $this->requireAdmin(true);
+        $input = json_decode((string) file_get_contents('php://input'), true);
+        if (!is_array($input) || !Csrf::isValid($input['_csrf_token'] ?? null)) {
+            Http::json(['error' => 'A página expirou. Recarregue e tente de novo.'], 419);
+        }
+
+        return $input;
+    }
+
+    /**
+     * Nome curto do aparelho para a lista, ex.: "Android · Chrome".
+     */
+    private function deviceName(): string
+    {
+        $userAgent = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $system = match (true) {
+            (bool) preg_match('/iphone|ipad/i', $userAgent) => 'iPhone',
+            (bool) preg_match('/android/i', $userAgent) => 'Android',
+            (bool) preg_match('/windows/i', $userAgent) => 'Windows',
+            (bool) preg_match('/mac os/i', $userAgent) => 'Mac',
+            default => 'Outro',
+        };
+        $browser = match (true) {
+            (bool) preg_match('/edg\//i', $userAgent) => 'Edge',
+            (bool) preg_match('/firefox/i', $userAgent) => 'Firefox',
+            (bool) preg_match('/chrome|crios/i', $userAgent) => 'Chrome',
+            (bool) preg_match('/safari/i', $userAgent) => 'Safari',
+            default => 'navegador',
+        };
+
+        return $system . ' · ' . $browser;
     }
 
     /**

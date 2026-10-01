@@ -19,7 +19,7 @@ $weekdays = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta
 $months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 $todayLabel = $weekdays[(int) date('w')] . ', ' . date('j') . ' de ' . $months[(int) date('n') - 1] . ' de ' . date('Y');
 // Página inicial: calculators.js no fim (conta rápida). Nas calculadoras ele carrega logo depois da calculadora (ver site/tool.php)
-$usesCalculators = $pageKey === 'inicio';
+$usesCalculators = false; // a conta rápida da página inicial saiu; o calculators.js carrega só nas calculadoras (site/tool.php)
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -110,11 +110,19 @@ $usesCalculators = $pageKey === 'inicio';
     <div class="footer-inner">
       <span>© <?= date('Y') ?> Vibe2000 · site gratuito · resultados estimados</span>
       <nav aria-label="Institucional">
-        <a href="/sobre">Sobre</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a>
+        <a href="/feriados">Feriados</a><a href="/sobre">Sobre</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a>
         <button type="button" class="footer-link" id="cookie-settings-link">Preferências de cookies</button>
       </nav>
     </div>
   </footer>
+
+  <!-- Navegação do app instalado (PWA): só aparece no app em telas de celular (assets/js/app-shell.js) -->
+  <nav class="app-nav" id="app-nav" aria-label="Navegação do app" hidden>
+    <button type="button" data-app-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Voltar</span></button>
+    <button type="button" data-app-action="forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg><span>Avançar</span></button>
+    <a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Início</span></a>
+    <button type="button" data-app-action="reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span>Atualizar</span></button>
+  </nav>
 
   <section class="cookie-banner" id="cookie-banner" role="dialog" aria-labelledby="cookie-title" hidden>
     <div class="cookie-inner">
@@ -136,6 +144,7 @@ $usesCalculators = $pageKey === 'inicio';
   </section>
 
   <script src="<?= e(asset('js/site.js')) ?>" defer></script>
+  <script src="<?= e(asset('js/app-shell.js')) ?>" defer></script>
   <script src="<?= e(asset('js/install-app.js')) ?>" defer></script>
   <?php if ($usesCalculators): ?>
     <script src="<?= e(asset('js/calculators.js')) ?>" defer></script>

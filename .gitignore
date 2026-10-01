@@ -9,6 +9,8 @@
 /storage/cache/*
 /storage/logs/*
 /storage/sessions/*
+# Chaves das notificações push (privadas; criadas sozinhas em cada servidor)
+/storage/keys/
 !/storage/**/.gitkeep
 
 # Sistema operacional / editores

@@ -418,6 +418,6 @@ class TripPlanner
         if ($status === 429) {
             throw new TripException('Muitas consultas ao serviço de rotas agora. Tente de novo em alguns minutos.', 429);
         }
-        throw new TripException('O serviço de rotas não respondeu. Tente de novo em instantes.', 502);
+        throw new TripException('O serviço de rotas não respondeu. Tente de novo em instantes.', 503);
     }
 }

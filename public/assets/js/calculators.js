@@ -2429,13 +2429,15 @@
           showHistory(history);
         }
 
-        function showHistory({ vehicle, points }) {
+        function showHistory({ vehicle, points, historyUnavailable }) {
           const first = points[0];
           const last = points[points.length - 1];
           const years = points.length - 1;
           const vehicleLabel = `${vehicle.brand} ${vehicle.model} · ${vehicle.year}${vehicle.fuel ? " " + vehicle.fuel : ""}`;
           if (years < 1) {
-            fipeResult.innerHTML = display("Valor na FIPE hoje", formatMoney(last.price), `${escapeHtml(vehicleLabel)} · ainda não há 1 ano de histórico na tabela`);
+            // Sem histórico: o site da FIPE não respondeu e só veio o valor de hoje pela fonte reserva
+            const reason = historyUnavailable ? "o histórico dos anos anteriores está indisponível agora; tente mais tarde ou use a aba \"Estimar o futuro\"" : "ainda não há 1 ano de histórico na tabela";
+            fipeResult.innerHTML = display("Valor na FIPE hoje", formatMoney(last.price), `${escapeHtml(vehicleLabel)} · ${reason}`);
             fipeDetails.hidden = true;
             return;
           }
