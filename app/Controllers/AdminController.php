@@ -14,6 +14,7 @@ use App\Models\PushSubscription;
 use App\Models\RateLimit;
 use App\Services\Content;
 use App\Services\Deployer;
+use App\Services\LogViewer;
 use App\Services\Migrator;
 use App\Services\PushNotifier;
 use App\Services\WebPush;
@@ -384,6 +385,30 @@ class AdminController
         }
         Session::flash('deploy_result', Deployer::run());
         Http::redirect('/painel/atualizar');
+    }
+
+    /**
+     * Logs: storage/logs (um arquivo por dia) e o error_log do PHP. ?arquivo=chave&busca=texto
+     */
+    public function logs(): void
+    {
+        $admin = $this->requireAdmin();
+        $files = LogViewer::files();
+        $selectedKey = (string) ($_GET['arquivo'] ?? '');
+        if (!isset($files[$selectedKey])) {
+            $selectedKey = (string) array_key_first($files);
+        }
+        $search = trim(mb_substr((string) ($_GET['busca'] ?? ''), 0, 100));
+
+        $this->render('admin/logs', [
+            'pageTitle' => 'Logs',
+            'activeTab' => 'logs',
+            'admin' => $admin,
+            'files' => $files,
+            'selectedKey' => $selectedKey,
+            'search' => $search,
+            'log' => $selectedKey !== '' ? LogViewer::read($files[$selectedKey]['path'], $search) : null,
+        ]);
     }
 
     public function updateMessage(string $messageId): void

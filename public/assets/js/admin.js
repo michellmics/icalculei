@@ -39,6 +39,11 @@
     });
   }
 
+  // Campos com data-autosubmit (ex.: arquivo da tela de Logs) enviam o formulário ao mudar
+  document.querySelectorAll("[data-autosubmit]").forEach((field) => {
+    field.addEventListener("change", () => field.form.submit());
+  });
+
   // Formulários com data-confirm (ex.: Atualizar site) pedem confirmação antes de enviar
   document.querySelectorAll("form[data-confirm]").forEach((form) => {
     form.addEventListener("submit", (submitEvent) => {

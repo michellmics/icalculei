@@ -12,7 +12,8 @@ $tabs = [
     'visits' => ['href' => '/painel/visitas', 'label' => '📊 Visitas'],
     'tools' => ['href' => '/painel/calculadoras', 'label' => '🧮 Calculadoras'],
     'messages' => ['href' => '/painel/mensagens', 'label' => '✉️ Mensagens'],
-    'deploy' => ['href' => '/painel/atualizar', 'label' => '🚀 Atualizar site'],
+    'logs' => ['href' => '/painel/logs', 'label' => '📜 Logs'],
+    'deploy' =>['href' => '/painel/atualizar', 'label' => '🚀 Atualizar site'],
 ];
 ?>
 <!doctype html>

@@ -557,6 +557,20 @@ a.copy-button, a.action-button, a.secondary-button { text-decoration: none; disp
 .admin-flash { background: var(--error-bg, #fde8e8); color: var(--danger); border-radius: 8px; padding: 10px 14px; margin: 0; }
 .message-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .message-actions form { margin: 0; }
+/* Painel → Logs */
+.log-filters { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin: 0 0 12px; }
+.log-filters label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); flex: 1 1 220px; min-width: 0; }
+.log-filters select, .log-filters input { width: 100%; }
+.log-meta { font-size: 13px; margin: 0 0 8px; overflow-wrap: anywhere; }
+.log-lines { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; font-family: var(--font-number); font-size: 13px; max-height: 70vh; overflow-y: auto; }
+.log-lines li { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 6px; background: var(--paper); border-left: 3px solid var(--line); }
+.log-lines li > span:last-child { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+.log-kind { flex: none; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); width: 48px; }
+.log-erro { border-left-color: var(--danger) !important; }
+.log-erro .log-kind { color: var(--danger); }
+.log-deploy { border-left-color: var(--up) !important; }
+.log-deploy .log-kind { color: var(--up); }
+.log-note { margin-top: 12px; }
 
 /* ---------- App (PWA): botões "Instalar o app" e convite animado (mesmo modelo do direitaconservada) ---------- */
 [data-install-app][hidden], [data-install-area][hidden] { display: none !important; }

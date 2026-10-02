@@ -45,6 +45,9 @@ O dono pede atualizações de calculadoras e notícias com frequência; o conte�
 - Localização das visitas (colunas `country`/`region` de `visits`, migration 006): vem dos cabeçalhos do Cloudflare `CF-IPCountry` e `cf-region-code` (`VisitController::detectLocation`); o IP não é guardado. Estados só com "Add visitor location headers" ligado no Cloudflare (Rules → Transform Rules → Managed Transforms).
 - `database/migrations/*.sql` + `php bin/migrate.php` (lógica em `app/Services/Migrator.php`) · login do painel: `ADMIN_USER` e `ADMIN_PASSWORD` no `.env`
 
+## Logs (Painel → 📜 Logs, `/painel/logs`)
+- `ErrorHandler::log` grava em `storage/logs/app-AAAA-MM-DD.log` (um arquivo por dia). Retenção: 90 dias e no máximo 10 MB por dia (`LOG_RETENTION_DAYS`/`LOG_MAX_BYTES_PER_DAY`; a limpeza roda ao criar o arquivo do dia, sem cron). A tela (`app/Services/LogViewer.php`, só leitura) também mostra o `error_log` do PHP do cPanel (raiz ou public/), onde caem os erros fatais.
+
 ## Atualizar produção
 - Painel → 🚀 Atualizar site (`/painel/atualizar`, `app/Services/Deployer.php`): baixa o último commit da branch pelo GitHub (ZIP), troca os arquivos e roda as migrations pendentes. Não mexe em `.env` nem `storage/`.
 - Só funciona depois de commit + push. Bloqueado com `APP_ENV=local`.
