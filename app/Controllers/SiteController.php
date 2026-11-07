@@ -278,12 +278,7 @@ class SiteController
         // Calendário de feriados: ano atual e o próximo, nacional, por mês e por estado
         foreach ([(int) date('Y'), (int) date('Y') + 1] as $holidayYear) {
             $pages[] = ['/feriados/' . $holidayYear, Holidays::reviewed()];
-            foreach (Holidays::MONTH_SLUGS as $monthSlug) {
-                $pages[] = ['/feriados/' . $holidayYear . '/' . $monthSlug, Holidays::reviewed()];
-            }
-            foreach (array_keys(Holidays::states()) as $stateCode) {
-                $pages[] = ['/feriados/' . $holidayYear . '/' . $stateCode, Holidays::reviewed()];
-            }
+            // Páginas por mês e por estado são noindex: ficam fora do sitemap
         }
         foreach (['/sobre', '/contato', '/termos-de-uso', '/privacidade'] as $institutionalPath) {
             $pages[] = [$institutionalPath, null];

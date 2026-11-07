@@ -109,9 +109,6 @@ $usesCalculators = false; // a conta rápida da página inicial saiu; o calculat
   <?= $content ?>
 
   <footer class="site-footer">
-    <div class="install-footer" data-install-area hidden>
-      <button type="button" class="install-footer-button" data-install-app hidden>📲 Instalar o app do iCalculei</button>
-    </div>
     <div class="footer-disclaimer">
       <h2>Aviso importante</h2>
       <p>O iCalculei é um site <b>gratuito</b>, de caráter <b>informativo e educativo</b>. As calculadoras e conversores apresentam <b>estimativas</b> baseadas nas informações digitadas por você e nas regras e tabelas oficiais conhecidas na data de revisão indicada em cada ferramenta. Apesar do cuidado na elaboração, <b>podem ocorrer erros de cálculo, desatualizações ou diferenças</b> em relação ao seu caso específico (convenções coletivas, acordos, benefícios, particularidades da empresa ou da legislação local, entre outros).</p>

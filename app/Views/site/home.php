@@ -98,19 +98,9 @@ $readyCount = count(array_filter($tools, fn (array $tool) => $tool['ready']));
           <?php foreach ($popularTools as $tool): ?><?= View::partial('tool-card', ['tool' => $tool]) ?><?php endforeach; ?>
         </div>
 
-        <div class="section-head"><h2>Todas as calculadoras</h2><span>por categoria</span></div>
-        <div class="directory">
-          <?php foreach ($categories as $categoryKey => $categoryName): ?>
-            <?php $toolsInCategory = array_filter($tools, fn (array $tool) => $tool['category'] === $categoryKey); ?>
-            <section class="directory-box">
-              <h3><?= e($categoryName) ?><span><?= count($toolsInCategory) ?></span></h3>
-              <ul>
-                <?php foreach ($toolsInCategory as $tool): ?>
-                  <li><a href="/calculadoras/<?= e($tool['id']) ?>"><?= e($tool['name']) ?><?= $tool['ready'] ? '' : ' (em breve)' ?></a></li>
-                <?php endforeach; ?>
-              </ul>
-            </section>
-          <?php endforeach; ?>
+        <div class="section-head"><h2>Artigos e guias</h2><a class="pill-button" href="/noticias">ver todos</a></div>
+        <div class="news-grid news-grid-home">
+          <?php foreach (array_slice($news, 0, 8) as $article): ?><?= View::partial('news-card', ['article' => $article]) ?><?php endforeach; ?>
         </div>
       <?php endif; ?>
     </div>

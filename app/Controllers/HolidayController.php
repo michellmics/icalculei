@@ -84,6 +84,8 @@ class HolidayController
         header('Cache-Control: public, max-age=0, s-maxage=600');
         echo View::render('site/holidays', [
             'ogImage' => share_banner('feriados'),
+            // Páginas por estado são parecidas entre si: fora do Google até o site ter mais conteúdo próprio
+            'robotsMeta' => $state ? 'noindex, follow' : 'index, follow, max-image-preview:large',
             'pageTitle' => $state
                 ? "Feriados {$yearNumber} {$state['in']} {$place}: Estaduais e da Capital | iCalculei"
                 : "Feriados {$yearNumber}: Calendário Completo dos Feriados Nacionais | iCalculei",
@@ -150,6 +152,7 @@ class HolidayController
         header('Cache-Control: public, max-age=0, s-maxage=600');
         echo View::render('site/holidays-month', [
             'ogImage' => share_banner('feriados'),
+            'robotsMeta' => 'noindex, follow', // por mês: conteúdo gerado, parecido entre si
             'pageTitle' => "Feriados de {$monthTitle} de {$yearNumber}: Datas, Feriadões e Dias Úteis | iCalculei",
             'metaDescription' => $questions[0][1] . ' ' . $questions[2][1],
             'canonicalPath' => $path,

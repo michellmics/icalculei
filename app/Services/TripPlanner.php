@@ -23,9 +23,11 @@ class TripPlanner
     // Servidores públicos e gratuitos do Overpass, do mais rápido para o mais lento, com o tempo máximo de
     // espera de cada um: se um estiver ocupado (429) ou fora do ar, tenta o próximo
     private const OVERPASS_URLS = [
-        'https://overpass-api.de/api/interpreter' => 15,
-        'https://maps.mail.ru/osm/tools/overpass/api/interpreter' => 20,
+        'https://overpass-api.de/api/interpreter' => 12,
+        'https://overpass.kumi.systems/api/interpreter' => 12,
         'https://overpass.private.coffee/api/interpreter' => 10,
+        'https://overpass.openstreetmap.fr/api/interpreter' => 12,
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter' => 12,
     ];
     private const CACHE_FOLDER = '/storage/cache/trip';
     private const CACHE_DAYS_ADDRESS = 30;
@@ -184,7 +186,7 @@ class TripPlanner
             $box = sprintf('%.5f,%.5f,%.5f,%.5f', $segment['south'], $segment['west'], $segment['north'], $segment['east']);
             $queryParts[] = "node[\"barrier\"=\"toll_booth\"]({$box});way[\"barrier\"=\"toll_booth\"]({$box});";
         }
-        $query = '[out:json][timeout:25];(' . implode('', $queryParts) . ');out center tags;';
+        $query = '[out:json][timeout:12];(' . implode('', $queryParts) . ');out center tags;';
         $body = null;
         $failures = [];
         foreach (self::OVERPASS_URLS as $overpassUrl => $timeoutSeconds) {
